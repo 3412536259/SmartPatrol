@@ -13,7 +13,7 @@ set(MQTT_LIBS
 
 # -------------------------- 1. 收集src目录源文件 --------------------------
 set(SRC_FILES
-    ../test/cameraTest.cpp
+    ../test/taskTest.cpp
     business_layer/camera/camera_manager.cpp
     business_layer/camera/camera.cpp
     business_layer/device/device_manager.cpp
@@ -29,6 +29,7 @@ set(SRC_FILES
     ../include/common/Imageprocess/ImageProcessor.cpp
     ../include/common/timestamp/SegmentManager.cpp
     ../include/common/logger/logger.cpp
+    ../include/common/base64/base64.cpp
 )
 
 # -------------------------- 2. 生成主程序可执行文件 --------------------------
@@ -48,6 +49,7 @@ target_include_directories(main PUBLIC
     ${CMAKE_SOURCE_DIR}/include/common/logger
     ${CMAKE_SOURCE_DIR}/include/common/timestamp
     ${CMAKE_SOURCE_DIR}/include/common/threads
+    ${CMAKE_SOURCE_DIR}/include/common/base64
     ${CMAKE_SOURCE_DIR}/third_party/mqtt
     ${CMAKE_SOURCE_DIR}/third_party/json
     
