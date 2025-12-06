@@ -1,8 +1,7 @@
 #ifndef SENSOR_READER_H
 #define SENSOR_READER_H
 
-#include "interfaces/isensor.h"
-#include "common/data_queue.h"
+#include "data_layer/isensor.h"
 #include <thread>
 #include <atomic>
 #include <memory>

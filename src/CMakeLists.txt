@@ -14,6 +14,8 @@ set(MQTT_LIBS
 # -------------------------- 1. 收集src目录源文件 --------------------------
 set(SRC_FILES
     ../test/cameraTest.cpp
+    business_layer/sensor_service.cpp
+    business_layer/controller_service.cpp
     business_layer/camera/camera_manager.cpp
     business_layer/camera/camera.cpp
     business_layer/device/device_manager.cpp
@@ -23,6 +25,7 @@ set(SRC_FILES
     business_layer/mqtt/mqtt_command_dispatcher.cpp
     data_layer/video_capture.cpp
     data_layer/video_storage.cpp
+    data_layer/sensor_reader.cpp
     ../include/common/FileUtils/FileUtils.cpp
     ../include/common/utils/yolo8/postprocess.cc
     ../include/common/utils/yolo8/yolov8.cc
@@ -36,11 +39,15 @@ add_executable(main ${SRC_FILES})  # 可执行文件名：ai_recognition
 
 # -------------------------- 3. 配置头文件路径 --------------------------
 target_include_directories(main PUBLIC
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include/data_layer
     ${CMAKE_SOURCE_DIR}/include/data_layer/camera
+    ${CMAKE_SOURCE_DIR}/include/business_layer
     ${CMAKE_SOURCE_DIR}/include/business_layer/camera
     ${CMAKE_SOURCE_DIR}/include/business_layer/device
     ${CMAKE_SOURCE_DIR}/include/business_layer/task
     ${CMAKE_SOURCE_DIR}/include/business_layer/mqtt
+    ${CMAKE_SOURCE_DIR}/include/business_layer/sensor_service
     ${CMAKE_SOURCE_DIR}/include/common
     ${CMAKE_SOURCE_DIR}/include/common/FileUtils
     ${CMAKE_SOURCE_DIR}/include/common/utils/yolo8
