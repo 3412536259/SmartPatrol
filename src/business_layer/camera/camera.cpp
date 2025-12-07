@@ -6,7 +6,7 @@
 extern "C" {
 #include <libavutil/time.h>
 }
-const std::string VIDEO_DIR = "/home/ztl/workspace/SmartPatrol/SmartPatrol/videos";
+const std::string ROOT_DIR = "/home/ztl/workspace/SmartPatrol/SmartPatrol/videos/";
 const std::string VIDEOFORMAT = "mp4";
 const int SEGMENTDURATIONSEC = 60;
 
@@ -92,7 +92,8 @@ void Camera::pullKeyFrameLoop()
 
         return;
     }
-    SegmentManager segMgr(VIDEO_DIR, VIDEOFORMAT, SEGMENTDURATIONSEC);
+    std::string video_dir = ROOT_DIR+this->cameraStaticInfo_.camera_id;
+    SegmentManager segMgr(video_dir, VIDEOFORMAT, SEGMENTDURATIONSEC);
     TimestampAdjuster tsAdjuster;
 
     auto storage = segMgr.createSegment(videoCapture_.getFormatContext());
@@ -128,11 +129,6 @@ void Camera::pullKeyFrameLoop()
             totalPackets++;
             if (totalPackets % 200 == 0)
                 LOG_INFO("Written " + std::to_string(totalPackets) + " packets total");
-        }
-        if (!videoCapture_.readPacket(packet)) {
-            LOG_WARNING("Failed to read packet, retrying...");
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
-            continue;
         }
                 //对关键帧
         if (packet->flags & AV_PKT_FLAG_KEY) {

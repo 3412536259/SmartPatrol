@@ -31,11 +31,12 @@ bool CameraManager::registerDevices()
     info1.camera_id = "1";
     info1.name = "hh";
     info1.rtsp_url = "rtsp://admin:Wlkjaqxy411@10.9.255.21:554/Streaming/Channels/101";
+    // info1.rtsp_url = "rtsp://admin:051127djq@192.168.31.3:554/Streaming/Channels/101";
 
     info2.camera_id = "2";
     info2.name = "h";
+    // info2.rtsp_url = "rtsp://admin:051127djq@192.168.31.32:554/Streaming/Channels/101";
     info2.rtsp_url = "rtsp://admin:Wlkjaqxy411@10.9.255.21:554/Streaming/Channels/201";
-
     addCamera(info1);
     addCamera(info2);
 
