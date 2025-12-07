@@ -1,14 +1,13 @@
 #ifndef SENSOR_READER_H
 #define SENSOR_READER_H
 
-#include "interfaces/isensor.h"
-#include "common/data_queue.h"
+#include "data_layer/isensor.h"
 #include <thread>
 #include <atomic>
 #include <memory>
 #include <vector>
 
-// 红外传感器
+// 红外传感器1
 class InfraredSensor : public ISensor {
 public:
     InfraredSensor(const std::string& id, int gpio_pin);
