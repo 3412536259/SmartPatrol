@@ -60,13 +60,14 @@ RealImage DeviceManager::getRealImage(const std::string& camId)
     }
     realImage.frame = frame;
     realImage.integrity = true;
-
     // TODO：把 frame 传递到云端 或者回调给上层
     // 示例（你之后自己替换上传函数）：
     // cloudUploader_.uploadRealImage(id, frame);
 
     std::cout << "DeviceManager: Real image retrieved for camera " 
               << info.camera_id << ", timestamp=" << frame.timestamp << std::endl;
+
+    return realImage;
 }
 
 void DeviceManager::getAllHistoryImage()
