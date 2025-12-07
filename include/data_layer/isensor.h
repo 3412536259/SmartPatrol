@@ -5,7 +5,7 @@
 #include <memory>
 #include <cstdint>
 
-// 传感器数据结构
+// 传感器数据结构1
 struct SensorData {
     std::string sensor_id;      // 传感器ID
     std::string sensor_type;    // 传感器类型: "infrared", "water_immersion", "smoke"

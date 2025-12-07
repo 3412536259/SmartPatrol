@@ -7,7 +7,7 @@
 #include <memory>
 #include <vector>
 
-// 红外传感器
+// 红外传感器1
 class InfraredSensor : public ISensor {
 public:
     InfraredSensor(const std::string& id, int gpio_pin);

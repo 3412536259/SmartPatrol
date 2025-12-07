@@ -112,7 +112,7 @@ static long getCurrentTimestamp() {
         std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
-// 静态实现指针
+// 静态实现指针1
 static std::unique_ptr<SensorServiceImpl> s_impl;
 
 // ===================== SensorService 实现 =====================

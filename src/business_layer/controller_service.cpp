@@ -24,7 +24,7 @@ static bool initGPIOOutput(int gpio_pin) {
         direction_file.close();
         return true;
     }
-    return true; // 模拟环境也返回成功
+    return true; // 模拟环境也返回成功1
 }
 
 static bool setGPIOValue(int gpio_pin, bool value) {
