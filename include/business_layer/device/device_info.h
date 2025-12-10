@@ -20,4 +20,9 @@ struct RealImage
     bool integrity = false;
 };
 
+struct RealImageList
+{
+    std::vector<RealImage> RealImages;
+    bool success = true;
+};
 #endif
