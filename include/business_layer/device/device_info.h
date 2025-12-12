@@ -7,7 +7,7 @@
 #include <vector>
 struct DeviceStatus
 {
-    std::vector<CameraStatus> cameraStatus_;
+    CameraStatusList cameraStatusList;
     // std::vector<PLCInfo> plcStatus_;
     // std::vector<SensorData> sensorStatus_;
 

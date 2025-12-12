@@ -11,7 +11,6 @@
 #include <thread>
 #include <atomic>
 #include <condition_variable>
-#include "FileUtils.h"
 #include "iai_model_service.h"
 #include "idevice_manager.h"
 #include "device_info.h"

@@ -26,55 +26,6 @@ bool CameraManager::registerDevices()
         addCamera(info);
     }
 
-    // CameraStaticInfo info1;
-    // CameraStaticInfo info2;
-    // CameraStaticInfo info3;
-    // CameraStaticInfo info4;
-    // CameraStaticInfo info5;
-    // CameraStaticInfo info6;
-    // CameraStaticInfo info7;
-    // info1.camera_id = "1";
-    // info1.name = "hh";
-    // info1.rtsp_url = "rtsp://admin:Wlkjaqxy411@10.9.255.21:554/Streaming/Channels/101";
-    // // info1.rtsp_url = "rtsp://admin:051127djq@192.168.31.3:554/Streaming/Channels/101";
-
-    // info2.camera_id = "2";
-    // info2.name = "h";
-    // // info2.rtsp_url = "rtsp://admin:051127djq@192.168.31.32:554/Streaming/Channels/101";
-    // info2.rtsp_url = "rtsp://admin:Wlkjaqxy411@10.9.255.21:554/Streaming/Channels/201";
-
-    // info3.camera_id = "3";
-    // info3.name = "h1";
-    // // info2.rtsp_url = "rtsp://admin:051127djq@192.168.31.32:554/Streaming/Channels/101";
-    // info3.rtsp_url = "rtsp://admin:Wlkjaqxy411@10.9.255.21:554/Streaming/Channels/301";
-
-    // info4.camera_id = "4";
-    // info4.name = "h2";
-    // // info2.rtsp_url = "rtsp://admin:051127djq@192.168.31.32:554/Streaming/Channels/101";
-    // info4.rtsp_url = "rtsp://admin:Wlkjaqxy411@10.9.255.21:554/Streaming/Channels/401";
-
-    // info5.camera_id = "5";
-    // info5.name = "h4";
-    // // info2.rtsp_url = "rtsp://admin:051127djq@192.168.31.32:554/Streaming/Channels/101";
-    // info5.rtsp_url = "rtsp://admin:Wlkjaqxy411@10.9.255.21:554/Streaming/Channels/501";
-
-    // info6.camera_id = "6";
-    // info6.name = "h5";
-    // // info2.rtsp_url = "rtsp://admin:051127djq@192.168.31.32:554/Streaming/Channels/101";
-    // info6.rtsp_url = "rtsp://admin:Wlkjaqxy411@10.9.255.21:554/Streaming/Channels/601";
-
-    // info7.camera_id = "7";
-    // info7.name = "h6";
-    // // info2.rtsp_url = "rtsp://admin:051127djq@192.168.31.32:554/Streaming/Channels/101";
-    // info7.rtsp_url = "rtsp://admin:Wlkjaqxy411@10.9.255.21:554/Streaming/Channels/701";
-    // addCamera(info1);
-    // addCamera(info2);
-    // addCamera(info3);
-    // addCamera(info4);
-    // addCamera(info5);
-    // addCamera(info6);
-    // addCamera(info7);
-
     return true;
 }
 
@@ -147,14 +98,14 @@ CameraStatus CameraManager::getStatus(const CameraStaticInfo& info) {
     return cameras_[id]->getStatus();
 }
 
-std::vector<CameraStatus> CameraManager::getAllStatus() {
+CameraStatusList CameraManager::getAllStatus() {
+    CameraStatusList cameraStatusList;
     std::lock_guard<std::mutex> lock(mutex_);
 
-    std::vector<CameraStatus> result;
     for (auto& camera : cameras_) {
-        result.push_back(camera.second->getStatus());
+        cameraStatusList.cameraStatus.push_back(camera.second->getStatus());
     }
-    return result;
+    return cameraStatusList;
 }
 
 bool CameraManager::getCameraLastKeyFrame(const CameraStaticInfo& info, FrameData& out) {

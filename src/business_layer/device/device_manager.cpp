@@ -14,11 +14,8 @@ DeviceManager::~DeviceManager()
 DeviceStatus DeviceManager::getStatus()
 {
     DeviceStatus deviceStatus;
-    deviceStatus.cameraStatus_ = cameraManager_->getAllStatus();
-    for(auto& kv : deviceStatus.cameraStatus_)
-    {
-        std::cout << kv.camera_id << kv.online_status << std::endl;
-    }
+    deviceStatus.cameraStatusList = cameraManager_->getAllStatus();
+
     return deviceStatus;
 }
 
