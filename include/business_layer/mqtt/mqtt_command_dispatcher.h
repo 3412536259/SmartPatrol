@@ -4,7 +4,7 @@
 #include <string>
 #include <memory>
 #include <json.hpp>
-#include "JobScheduler.h"
+#include "job_scheduler.h"
 #include "task.h"
 #include "icommand_dispatcher.h"
 class MqttCommandDispatcher : public ICommandDispatcher
@@ -17,11 +17,8 @@ private:
     JobScheduler& scheduler_;
     std::string boxId_;
     void handleGetRealImage(const nlohmann::json& j);
-    void handleOperatePlc(const nlohmann::json& j);
-    void handleGetPLCDeviceStatus(const nlohmann::json& j);
     void handleUpdateConfig(const nlohmann::json& j);
     void handleGetSensorData(const nlohmann::json& j);
-    void handleOperateCar(const nlohmann::json& j);
     void handleGetAllDeviceStatus(const nlohmann::json& j);
 
 };

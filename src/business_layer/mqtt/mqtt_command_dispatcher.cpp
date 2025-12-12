@@ -21,17 +21,11 @@ void MqttCommandDispatcher::onMessage(const std::string& topic, const std::strin
     if (topic == GET_REAL_IMAGE_TOPIC) {
         handleGetRealImage(j);
     }
-    else if (topic == OPERATE_PLC_TOPIC) {
-        handleOperatePlc(j);
-    }
     else if (topic == UPDATE_CONFIG_TOPIC) {
         handleUpdateConfig(j);
     }
     else if(topic == GET_SENSOR_DATA_TOPIC) {
         handleGetSensorData(j);
-    }
-    else if (topic == OPERATE_CAR_TOPIC) {
-        handleOperateCar(j);
     }
     else if(topic == GET_ALL_DEVICE_STATUS_TOPIC){
         handleGetAllDeviceStatus(j);
@@ -53,26 +47,7 @@ void MqttCommandDispatcher::handleGetRealImage(const nlohmann::json& j)
     std::cout << "Submitted GetRealImageTask id=" << id 
               << " for cam=" << camId << std::endl;
 }
-void MqttCommandDispatcher::handleOperatePlc(const nlohmann::json& j)
-{
-    if(!j.contains("deviceId") || !j.contains("action")) return;
-    std::string deviceId = j["deviceId"];
-    std::string cmd = j["action"];
-    auto task = std::make_shared<OperateValveTask>(deviceId, cmd);
-    int id = scheduler_.submit(task, "mqtt");
 
-    std::cout << "Submitted OperatePLC id=" << id 
-              << " for device=" << deviceId << " operation=" << cmd << std::endl;
-}
-void MqttCommandDispatcher::handleGetPLCDeviceStatus(const nlohmann::json& j){
-    if(!j.contains("deviceId")) return;
-    std::string deviceId = j["deviceId"];
-    auto task = std::make_shared<GetPLCDeviceTask>(deviceId);
-    int id = scheduler_.submit(task, "mqtt");
-
-    std::cout << "Submitted GetPLCDeviceStatus id=" << id 
-              << " for device=" << deviceId << std::endl;
-}
 void MqttCommandDispatcher::handleGetSensorData(const nlohmann::json& j)
 {
     if(!j.contains("sensorId")) return;
@@ -88,33 +63,7 @@ void MqttCommandDispatcher::handleUpdateConfig(const nlohmann::json& j)
 
 }
 
-void MqttCommandDispatcher::handleOperateCar(const nlohmann::json& j)
-{
-    if (!j.contains("carcontrol_id") && !j.contains("motor1") && !j.contains("motor2")) {
-        std::cerr << "Invalid car control command: missing required fields" << std::endl;
-        return;
-    }
-    
-    std::string carId = j.value("carcontrol_id", std::string("carcontrol001"));
-    int motor1 = j.value("motor1", 0);
-    int motor2 = j.value("motor2", 0);
-    
-    // 参数范围检查
-    motor1 = std::max(-1500, std::min(1500, motor1));
-    motor2 = std::max(-1500, std::min(1500, motor2));
-    
-    std::cout << "Handling car control command for car_id: " << carId 
-              << ", motor1: " << motor1 << ", motor2: " << motor2 << std::endl;
-    
-    // 创建并提交小车控制任务
-    auto task = std::make_shared<CarControlTask>(j);
-    int id = scheduler_.submit(task, "mqtt");
-    
-    std::cout << "Submitted CarControlTask id=" << id 
-              << " for car=" << carId 
-              << " motor1=" << motor1 
-              << " motor2=" << motor2 << std::endl;
-}
+
 void MqttCommandDispatcher::handleGetAllDeviceStatus(const nlohmann::json& j)
 {
     std::cout << "1111111111111111111111" << std::endl;

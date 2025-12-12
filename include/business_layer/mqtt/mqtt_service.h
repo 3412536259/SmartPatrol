@@ -2,7 +2,7 @@
 #define MQTT_SERVICE_H
 
 #include <mqtt/async_client.h>
-#include "JobScheduler.h"
+#include "job_scheduler.h"
 #include "mqtt_command_dispatcher.h"
 
 class MqttService : public virtual mqtt::callback

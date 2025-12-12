@@ -75,14 +75,27 @@ struct GatewayConfig {
     std::string status;
 };
 
+// ---------------- CarControl ----------------
+struct CarControlConfig {
+    std::string id;
+    std::string name;
+    SerialConfig serial;
+    // timing parameters (ms)
+    int sendWindowMs = 600;       // total continuous send window
+    int sendIntervalMs = 80;      // interval between sends
+    int operateTimeoutMs = 1500;  // timeout for operate() waiting
+};
+
 // ---------------- Root ----------------
 struct DeviceConfigRoot {
     std::string version;
     std::string description;
+    std::string boxId = "1";
 
     std::vector<CameraConfig> cameras;
     std::vector<PLCConfig> plcs;            // <-- 新增
     std::vector<PLCDeviceConfig> plcDevices;
     std::vector<SensorConfig> sensors;
     std::vector<GatewayConfig> gateways;
+    std::vector<CarControlConfig> carControls;
 };

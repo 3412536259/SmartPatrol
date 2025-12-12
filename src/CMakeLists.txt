@@ -22,6 +22,7 @@ set(SRC_FILES
     business_layer/task/job_scheduler.cpp
     business_layer/mqtt/mqtt_service.cpp
     business_layer/mqtt/mqtt_command_dispatcher.cpp
+    business_layer/mqtt/device_status_reporter.cpp
     business_layer/ai/ai_recognize.cpp
     business_layer/ai/ai_model_service.cpp
     data_layer/video_capture.cpp
