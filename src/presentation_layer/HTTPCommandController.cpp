@@ -5,8 +5,8 @@
 
 // ===================== HTTPCommandController 实现 =====================
 // 修复：构造函数初始化scheduler_（需确保JobScheduler是单例/可引用）
-HTTPCommandController::HTTPCommandController(JobScheduler jobScheduler)
-    : scheduler_(jobScheduler) { // 假设JobScheduler有单例接口
+HTTPCommandController::HTTPCommandController(const JobScheduler& scheduler)
+    : scheduler_(scheduler) { // 假设JobScheduler有单例接口
 }
 
 void HTTPCommandController::onMessage(const std::string& topic, const std::string& payload) {

@@ -16,7 +16,7 @@ using nlohmann::json;
 // 修复：构造函数参数匹配头文件声明
 WebService::WebService(const std::string httpPath, ICommandDispatcher* dispatcher)
     : m_bind_ip(httpPath),dispatcher_(dispatcher), m_server_fd(-1), m_running(false) {
-    m_port = 80;
+    m_port = 8080;
     if (m_bind_ip == "localhost") {
         m_bind_ip = "127.0.0.1";
     }

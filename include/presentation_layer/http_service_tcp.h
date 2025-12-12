@@ -84,9 +84,9 @@ class JobScheduler;
 class HTTPCommandController : public ICommandDispatcher{
 public:
     
-    HTTPCommandController(JobScheduler jobScheduler);
+    explicit HTTPCommandController(const JobScheduler& scheduler);
 
-
+    
     /**
      * @brief 处理JSON请求
      * @param topic 处理请求
@@ -95,7 +95,7 @@ public:
     void onMessage(const std::string& topic, const std::string& payload) override;
 
 private:
-    JobScheduler& scheduler_;
+    const JobScheduler& scheduler_;
 
     void handleGetRealImage(const nlohmann::json& j);
     void handleOperatePlc(const nlohmann::json& j);

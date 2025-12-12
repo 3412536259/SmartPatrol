@@ -34,10 +34,11 @@ set(SRC_FILES
     ../include/common/logger/logger.cpp
     ../include/common/base64/base64.cpp
     ../include/common/config/config_parser.cpp
-    presentation_layer/HTTPCommandController.cpp
+    # presentation_layer/HTTPCommandController.cpp
     # presentation_layer/WebService.cpp
     # business_layer/http/HttpClient.cpp
-    # ../test/httpText.cpp
+    # ../test/httpServiceText.cpp
+    # ../test/http_client.cpp
 
 )
 
