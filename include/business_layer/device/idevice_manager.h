@@ -19,12 +19,6 @@ public:
 
     // =================== 传感器相关接口 ===================
     
-    // 获取所有传感器状态（用于定时上报）
-    virtual AllSensorStatus getAllSensorStatus() = 0;
-    
-    // 读取温湿度（主动读取）
-    virtual SensorStatusData getTemperatureHumidity() = 0;
-    
     // 门锁控制（仅开锁）
     virtual DoorLockOperationResult openDoorLock(const std::string& lockId) = 0;
 };
