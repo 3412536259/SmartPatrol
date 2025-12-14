@@ -82,14 +82,14 @@ AllSensorStatus DeviceManager::getAllSensorStatus()
     return sensorService_->getAllSensorStatus();
 }
 
-SensorStatusData DeviceManager::getTemperatureHumidity()
+std::vector<SensorStatusData> DeviceManager::getAllTemperatureHumidity()
 {
-    SensorStatusData data;
+    std::vector<SensorStatusData> data;
     if (!sensorService_) {
         std::cerr << "DeviceManager: sensorService_ is null!" << std::endl;
         return data;
     }
-    return sensorService_->readTemperatureHumidity();
+    return sensorService_->readAllTemperatureHumidity();
 }
 
 // =================== 门锁控制（由控制器服务管理，仅开锁）===================

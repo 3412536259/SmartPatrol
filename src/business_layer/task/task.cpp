@@ -58,13 +58,17 @@ void UploadSensorStatusTask::run(TaskContext& ctx)
         nlohmann::json s;
         s["sensorId"] = sensor.sensor_id;
         s["type"] = sensor.sensor_type;
-        s["isValid"] = sensor.is_valid;
+        s["isOnline"] = sensor.is_online;  // 在线/离线状态
         s["timestamp"] = sensor.timestamp;
         
         if (sensor.sensor_type == "temperature_humidity") {
-            s["temperature"] = sensor.temperature;
-            s["humidity"] = sensor.humidity;
+            // 温湿度传感器：如果在线则上报数据
+            if (sensor.is_online) {
+                s["temperature"] = sensor.temperature;
+                s["humidity"] = sensor.humidity;
+            }
         } else {
+            // GPIO传感器：上报触发状态
             s["triggered"] = sensor.triggered;
         }
         sensors.push_back(s);
@@ -86,12 +90,14 @@ void GetSensorDataTask::run(TaskContext& ctx)
     for (const auto& sensor : allStatus.sensors) {
         if (sensor.sensor_id == sensorId_) {
             j["type"] = sensor.sensor_type;
-            j["isValid"] = sensor.is_valid;
+            j["isOnline"] = sensor.is_online;
             j["timestamp"] = sensor.timestamp;
             
             if (sensor.sensor_type == "temperature_humidity") {
-                j["temperature"] = sensor.temperature;
-                j["humidity"] = sensor.humidity;
+                if (sensor.is_online) {
+                    j["temperature"] = sensor.temperature;
+                    j["humidity"] = sensor.humidity;
+                }
             } else {
                 j["triggered"] = sensor.triggered;
             }
@@ -102,7 +108,7 @@ void GetSensorDataTask::run(TaskContext& ctx)
     
     if (!found) {
         j["code"] = "sensor not found";
-        j["isValid"] = false;
+        j["isOnline"] = false;
     }
     
     ctx.publisher->publish(RESULT_GET_SENSOR_DATA_TOPIC, j.dump());

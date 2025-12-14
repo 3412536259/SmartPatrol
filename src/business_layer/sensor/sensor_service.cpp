@@ -11,15 +11,11 @@
 
 // 串口配置（根据实际硬件配置修改）
 static const char* SERIAL_PORT = "/dev/ttyS3";      // 串口设备路径
-static const int MODBUS_SLAVE_ADDR = 0x01;          // 温湿度传感器从机地址
-static const int TEMP_REGISTER = 0x0000;            // 温度寄存器起始地址
-static const int HUMIDITY_REGISTER = 0x0001;        // 湿度寄存器起始地址
 static const int BAUD_RATE = B9600;                 // 波特率
 
-// 温湿度数据缓存（避免重复读取）
-static float cached_temperature = 0.0f;
-static float cached_humidity = 0.0f;
-static bool cache_valid = false;
+// 串口文件描述符缓存（避免频繁打开关闭）
+static int serial_fd = -1;
+static std::mutex serial_mutex;
 
 // CRC16计算（Modbus RTU）
 static uint16_t calculateCRC16(const uint8_t* data, int length) {
@@ -145,8 +141,11 @@ static bool modbusReadRegisters(int fd, uint8_t slave_addr, uint16_t start_reg,
     return true;
 }
 
-// 从温湿度传感器读取数据（一次读取温度和湿度）
-static bool readTempHumidityFromModbus(float& temperature, float& humidity) {
+// 从指定温湿度传感器读取数据
+static bool readTempHumidityFromModbus(uint8_t slave_addr, uint16_t temp_reg,
+                                        float& temperature, float& humidity) {
+    std::lock_guard<std::mutex> lock(serial_mutex);
+    
     int fd = openSerialPort();
     if (fd < 0) {
         return false;
@@ -154,7 +153,7 @@ static bool readTempHumidityFromModbus(float& temperature, float& humidity) {
     
     // 读取2个寄存器（温度和湿度）
     uint16_t values[2] = {0};
-    bool success = modbusReadRegisters(fd, MODBUS_SLAVE_ADDR, TEMP_REGISTER, 2, values);
+    bool success = modbusReadRegisters(fd, slave_addr, temp_reg, 2, values);
     close(fd);
     
     if (success) {
@@ -163,40 +162,13 @@ static bool readTempHumidityFromModbus(float& temperature, float& humidity) {
         temperature = static_cast<int16_t>(values[0]) / 10.0f;
         humidity = values[1] / 10.0f;
         
-        // 更新缓存
-        cached_temperature = temperature;
-        cached_humidity = humidity;
-        cache_valid = true;
-        
         Logger::getInstance().log(LogLevel::DEBUG, 
-            std::string("读取温湿度成功: T=") + std::to_string(temperature) + 
+            std::string("读取温湿度成功[从机") + std::to_string(slave_addr) + 
+            "]: T=" + std::to_string(temperature) + 
             "°C, H=" + std::to_string(humidity) + "%");
     }
     
     return success;
-}
-
-static float readTemperatureFromSensor() {
-    float temp, hum;
-    if (readTempHumidityFromModbus(temp, hum)) {
-        return temp;
-    }
-    return cache_valid ? cached_temperature : 0.0f;
-}
-
-static float readHumidityFromSensor() {
-    // 如果缓存有效，直接返回缓存的湿度（因为温度读取时已经一起读了）
-    if (cache_valid) {
-        cache_valid = false;  // 标记缓存已使用
-        return cached_humidity;
-    }
-    
-    // 如果缓存无效，重新读取
-    float temp, hum;
-    if (readTempHumidityFromModbus(temp, hum)) {
-        return hum;
-    }
-    return 0.0f;
 }
 
 // ===================== SensorService 实现 =====================
@@ -213,8 +185,19 @@ SensorService::SensorService()
     smoke_status_.sensor_id = "smoke_01";
     smoke_status_.sensor_type = "smoke";
     
-    temp_humidity_status_.sensor_id = "temp_humidity_01";
-    temp_humidity_status_.sensor_type = "temperature_humidity";
+    // 初始化多个温湿度传感器配置（应从配置文件读取，数量不固定）
+    // 默认配置1个温湿度传感器
+    temp_humidity_configs_ = {
+        {"temp_humidity_01", 0x01, 0x0000, 0x0001}
+    };
+    
+    // 初始化温湿度传感器状态列表
+    for (const auto& config : temp_humidity_configs_) {
+        SensorStatusData status;
+        status.sensor_id = config.sensor_id;
+        status.sensor_type = "temperature_humidity";
+        temp_humidity_status_list_.push_back(status);
+    }
     
     Logger::getInstance().log(LogLevel::INFO, "传感器服务已创建");
 }
@@ -334,7 +317,7 @@ void SensorService::monitoringLoop() {
                         checkAndTriggerAlarm(infrared_status_);
                     }
                 }
-                infrared_status_.is_valid = true;
+                infrared_status_.is_online = true;  // GPIO传感器始终在线
             }
             
             // 读取水浸传感器
@@ -348,7 +331,7 @@ void SensorService::monitoringLoop() {
                         checkAndTriggerAlarm(water_status_);
                     }
                 }
-                water_status_.is_valid = true;
+                water_status_.is_online = true;  // GPIO传感器始终在线
             }
             
             // 读取烟感传感器
@@ -362,18 +345,28 @@ void SensorService::monitoringLoop() {
                         checkAndTriggerAlarm(smoke_status_);
                     }
                 }
-                smoke_status_.is_valid = true;
+                smoke_status_.is_online = true;  // GPIO传感器始终在线
             }
             
-            // 读取温湿度数据（通过Modbus或I2C）
+            // 读取所有温湿度传感器数据（通过Modbus）
             {
                 std::lock_guard<std::mutex> lock(status_mutex_);
-                // TODO: 实际通过Modbus/I2C从温湿度传感器读取数据
-                // 示例：使用 libmodbus 或 i2c-dev 读取
-                temp_humidity_status_.temperature = readTemperatureFromSensor();
-                temp_humidity_status_.humidity = readHumidityFromSensor();
-                temp_humidity_status_.timestamp = current_time;
-                temp_humidity_status_.is_valid = true;
+                for (size_t i = 0; i < temp_humidity_configs_.size() && i < temp_humidity_status_list_.size(); ++i) {
+                    const auto& config = temp_humidity_configs_[i];
+                    auto& status = temp_humidity_status_list_[i];
+                    
+                    float temp = 0.0f, hum = 0.0f;
+                    bool success = readTempHumidityFromModbus(config.slave_addr, config.temp_register, temp, hum);
+                    
+                    status.is_online = success;  // 通信成功则在线，否则离线
+                    status.timestamp = current_time;
+                    
+                    if (success) {
+                        // 在线时上报数据
+                        status.temperature = temp;
+                        status.humidity = hum;
+                    }
+                }
             }
             
             std::this_thread::sleep_for(std::chrono::milliseconds(POLL_INTERVAL_MS));
@@ -422,17 +415,28 @@ AllSensorStatus SensorService::getAllSensorStatus() {
     AllSensorStatus status;
     status.collect_timestamp = getCurrentTimestamp();
     
-    // 添加所有传感器状态（用于定时上报）
+    // 添加GPIO传感器状态
     status.sensors.push_back(infrared_status_);
     status.sensors.push_back(water_status_);
     status.sensors.push_back(smoke_status_);
-    status.sensors.push_back(temp_humidity_status_);
+    
+    // 添加所有温湿度传感器状态
+    for (const auto& th_status : temp_humidity_status_list_) {
+        status.sensors.push_back(th_status);
+    }
     
     return status;
 }
 
-SensorStatusData SensorService::readTemperatureHumidity() {
+std::vector<SensorStatusData> SensorService::readAllTemperatureHumidity() {
     std::lock_guard<std::mutex> lock(status_mutex_);
-    temp_humidity_status_.timestamp = getCurrentTimestamp();
-    return temp_humidity_status_;
+    
+    // 返回所有温湿度传感器状态的副本
+    std::vector<SensorStatusData> result;
+    long current_time = getCurrentTimestamp();
+    for (auto& status : temp_humidity_status_list_) {
+        status.timestamp = current_time;
+        result.push_back(status);
+    }
+    return result;
 }

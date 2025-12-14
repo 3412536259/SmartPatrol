@@ -13,17 +13,25 @@
 struct SensorStatusData {
     std::string sensor_id;
     std::string sensor_type;    // "infrared", "water_immersion", "smoke", "temperature_humidity"
+    bool is_online = false;     // 在线/离线状态
     bool triggered = false;     // GPIO传感器触发状态
     float temperature = 0.0f;   // 温湿度传感器温度
     float humidity = 0.0f;      // 温湿度传感器湿度
     long timestamp = 0;
-    bool is_valid = false;      // 数据是否有效
 };
 
 // 所有传感器状态汇总（仅包含传感器，门锁在控制器中管理）
 struct AllSensorStatus {
     std::vector<SensorStatusData> sensors;
     long collect_timestamp = 0;
+};
+
+// 温湿度传感器配置
+struct TempHumiditySensorConfig {
+    std::string sensor_id;      // 传感器ID
+    uint8_t slave_addr;         // Modbus从机地址
+    uint16_t temp_register;     // 温度寄存器地址
+    uint16_t humidity_register; // 湿度寄存器地址
 };
 
 // 传感器服务接口
@@ -40,8 +48,8 @@ public:
     // 读取所有传感器状态（用于定时上报）
     virtual AllSensorStatus getAllSensorStatus() = 0;
     
-    // 读取温湿度（主动读取）
-    virtual SensorStatusData readTemperatureHumidity() = 0;
+    // 读取所有温湿度传感器（主动读取）
+    virtual std::vector<SensorStatusData> readAllTemperatureHumidity() = 0;
     
     // 告警回调（红外、水浸、烟感触发时调用）
     virtual void setAlarmCallback(std::function<void(const std::string& alarm_type, 
@@ -64,8 +72,8 @@ public:
     // 读取所有传感器状态（用于定时上报）
     AllSensorStatus getAllSensorStatus() override;
     
-    // 读取温湿度（主动读取）
-    SensorStatusData readTemperatureHumidity() override;
+    // 读取所有温湿度传感器（主动读取）
+    std::vector<SensorStatusData> readAllTemperatureHumidity() override;
     
     // 告警回调
     void setAlarmCallback(std::function<void(const std::string& alarm_type, 
@@ -91,11 +99,14 @@ private:
     int water_immersion_gpio_pin_ = 18;
     int smoke_gpio_pin_ = 27;
     
+    // 温湿度传感器配置列表
+    std::vector<TempHumiditySensorConfig> temp_humidity_configs_;
+    
     // 当前传感器状态缓存
     SensorStatusData infrared_status_;
     SensorStatusData water_status_;
     SensorStatusData smoke_status_;
-    SensorStatusData temp_humidity_status_;
+    std::vector<SensorStatusData> temp_humidity_status_list_;  // 多个温湿度传感器状态
 };
 
 #endif
