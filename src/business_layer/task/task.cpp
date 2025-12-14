@@ -31,67 +31,6 @@ void GetCameraRealImageTask::run(TaskContext& ctx)
 
 // =================== 传感器任务实现 ===================
 
-void GetAllSensorStatusTask::run(TaskContext& ctx)
-{
-    AllSensorStatus status = ctx.devMgr->getAllSensorStatus();
-    nlohmann::json j;
-    j["timestamp"] = status.collect_timestamp;
-    
-    // 传感器状态数组
-    nlohmann::json sensors = nlohmann::json::array();
-    for (const auto& sensor : status.sensors) {
-        nlohmann::json s;
-        s["sensorId"] = sensor.sensor_id;
-        s["type"] = sensor.sensor_type;
-        s["isValid"] = sensor.is_valid;
-        s["timestamp"] = sensor.timestamp;
-        
-        if (sensor.sensor_type == "temperature_humidity") {
-            s["temperature"] = sensor.temperature;
-            s["humidity"] = sensor.humidity;
-        } else {
-            s["triggered"] = sensor.triggered;
-        }
-        sensors.push_back(s);
-    }
-    j["sensors"] = sensors;
-    
-    // 门锁状态数组
-    nlohmann::json doorLocks = nlohmann::json::array();
-    for (const auto& lock : status.doorLocks) {
-        nlohmann::json l;
-        l["lockId"] = lock.lock_id;
-        l["isLocked"] = lock.is_locked;
-        l["isValid"] = lock.is_valid;
-        l["timestamp"] = lock.timestamp;
-        doorLocks.push_back(l);
-    }
-    j["doorLocks"] = doorLocks;
-    
-    ctx.publisher->publish(RESULT_GET_ALL_SENSOR_STATUS_TOPIC, j.dump());
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-}
-
-void GetTemperatureHumidityTask::run(TaskContext& ctx)
-{
-    SensorStatusData data = ctx.devMgr->getTemperatureHumidity();
-    nlohmann::json j;
-    j["sensorId"] = data.sensor_id;
-    j["type"] = data.sensor_type;
-    j["isValid"] = data.is_valid;
-    j["timestamp"] = data.timestamp;
-    
-    if (data.is_valid) {
-        j["temperature"] = data.temperature;
-        j["humidity"] = data.humidity;
-    } else {
-        j["code"] = "no data";
-    }
-    
-    ctx.publisher->publish(RESULT_GET_TEMP_HUMIDITY_TOPIC, j.dump());
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-}
-
 void OpenDoorLockTask::run(TaskContext& ctx)
 {
     DoorLockOperationResult result = ctx.devMgr->openDoorLock(lockId_);
