@@ -1,76 +1,235 @@
-#include "business_layer/ssensor/sensor_service.h"
+#include "business_layer/sensor/sensor_service.h"
 #include "common/logger/logger.h"
 #include <chrono>
-#include <map>
-#include <mutex>
 #include <fstream>
+#include <fcntl.h>
+#include <unistd.h>
+#include <termios.h>
+#include <cstring>
 
-// GPIO 传感器信息结构体
-struct GPIOSensor {
-    std::string sensor_id;
-    std::string sensor_type;
-    int gpio_pin;
-    bool last_state;
-    long last_trigger_time;
-    
-    GPIOSensor(const std::string& id, const std::string& type, int pin)
-        : sensor_id(id), sensor_type(type), gpio_pin(pin), 
-          last_state(false), last_trigger_time(0) {}
-};
+// ===================== Modbus RTU 温湿度传感器读取 =====================
 
-// 传感器服务内部实现
-class SensorServiceImpl {
-public:
-    std::vector<GPIOSensor> sensors;
-    mutable std::mutex sensors_mutex;
+// 串口配置（根据实际硬件配置修改）
+static const char* SERIAL_PORT = "/dev/ttyS3";      // 串口设备路径
+static const int MODBUS_SLAVE_ADDR = 0x01;          // 温湿度传感器从机地址
+static const int TEMP_REGISTER = 0x0000;            // 温度寄存器起始地址
+static const int HUMIDITY_REGISTER = 0x0001;        // 湿度寄存器起始地址
+static const int BAUD_RATE = B9600;                 // 波特率
+
+// 温湿度数据缓存（避免重复读取）
+static float cached_temperature = 0.0f;
+static float cached_humidity = 0.0f;
+static bool cache_valid = false;
+
+// CRC16计算（Modbus RTU）
+static uint16_t calculateCRC16(const uint8_t* data, int length) {
+    uint16_t crc = 0xFFFF;
+    for (int i = 0; i < length; i++) {
+        crc ^= data[i];
+        for (int j = 0; j < 8; j++) {
+            if (crc & 0x0001) {
+                crc = (crc >> 1) ^ 0xA001;
+            } else {
+                crc >>= 1;
+            }
+        }
+    }
+    return crc;
+}
+
+// 打开并配置串口
+static int openSerialPort() {
+    int fd = open(SERIAL_PORT, O_RDWR | O_NOCTTY | O_NDELAY);
+    if (fd < 0) {
+        Logger::getInstance().log(LogLevel::ERROR, 
+            std::string("无法打开串口: ") + SERIAL_PORT);
+        return -1;
+    }
     
-    void addSensor(const std::string& sensor_id, const std::string& sensor_type, int gpio_pin) {
-        std::lock_guard<std::mutex> lock(sensors_mutex);
+    // 配置串口参数
+    struct termios options;
+    tcgetattr(fd, &options);
+    
+    // 设置波特率
+    cfsetispeed(&options, BAUD_RATE);
+    cfsetospeed(&options, BAUD_RATE);
+    
+    // 8N1: 8数据位，无校验，1停止位
+    options.c_cflag &= ~PARENB;         // 无校验
+    options.c_cflag &= ~CSTOPB;         // 1停止位
+    options.c_cflag &= ~CSIZE;
+    options.c_cflag |= CS8;             // 8数据位
+    options.c_cflag |= CLOCAL | CREAD;  // 使能接收，忽略modem控制线
+    
+    // 原始模式
+    options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
+    options.c_iflag &= ~(IXON | IXOFF | IXANY);
+    options.c_oflag &= ~OPOST;
+    
+    // 读取超时设置
+    options.c_cc[VMIN] = 0;
+    options.c_cc[VTIME] = 10;  // 1秒超时
+    
+    tcsetattr(fd, TCSANOW, &options);
+    tcflush(fd, TCIOFLUSH);
+    
+    return fd;
+}
+
+// 发送Modbus RTU请求并读取响应
+static bool modbusReadRegisters(int fd, uint8_t slave_addr, uint16_t start_reg, 
+                                 uint16_t reg_count, uint16_t* values) {
+    // 构建Modbus RTU请求帧
+    // [从机地址][功能码03][寄存器起始地址高][低][寄存器数量高][低][CRC低][CRC高]
+    uint8_t request[8];
+    request[0] = slave_addr;
+    request[1] = 0x03;  // 功能码：读保持寄存器
+    request[2] = (start_reg >> 8) & 0xFF;
+    request[3] = start_reg & 0xFF;
+    request[4] = (reg_count >> 8) & 0xFF;
+    request[5] = reg_count & 0xFF;
+    
+    uint16_t crc = calculateCRC16(request, 6);
+    request[6] = crc & 0xFF;
+    request[7] = (crc >> 8) & 0xFF;
+    
+    // 清空接收缓冲区
+    tcflush(fd, TCIFLUSH);
+    
+    // 发送请求
+    if (write(fd, request, 8) != 8) {
+        Logger::getInstance().log(LogLevel::ERROR, "Modbus发送请求失败");
+        return false;
+    }
+    
+    // 等待响应
+    usleep(50000);  // 50ms等待从机响应
+    
+    // 读取响应
+    // 响应格式：[从机地址][功能码][字节数][数据...][CRC低][CRC高]
+    int expected_len = 3 + reg_count * 2 + 2;  // 头部3字节 + 数据 + CRC2字节
+    uint8_t response[256];
+    int total_read = 0;
+    int retry = 0;
+    
+    while (total_read < expected_len && retry < 10) {
+        int n = read(fd, response + total_read, expected_len - total_read);
+        if (n > 0) {
+            total_read += n;
+        } else {
+            retry++;
+            usleep(10000);
+        }
+    }
+    
+    if (total_read < expected_len) {
+        Logger::getInstance().log(LogLevel::ERROR, 
+            std::string("Modbus响应不完整，期望") + std::to_string(expected_len) + 
+            "字节，收到" + std::to_string(total_read) + "字节");
+        return false;
+    }
+    
+    // 验证CRC
+    uint16_t recv_crc = response[total_read - 2] | (response[total_read - 1] << 8);
+    uint16_t calc_crc = calculateCRC16(response, total_read - 2);
+    if (recv_crc != calc_crc) {
+        Logger::getInstance().log(LogLevel::ERROR, "Modbus CRC校验失败");
+        return false;
+    }
+    
+    // 解析数据
+    for (int i = 0; i < reg_count; i++) {
+        values[i] = (response[3 + i * 2] << 8) | response[3 + i * 2 + 1];
+    }
+    
+    return true;
+}
+
+// 从温湿度传感器读取数据（一次读取温度和湿度）
+static bool readTempHumidityFromModbus(float& temperature, float& humidity) {
+    int fd = openSerialPort();
+    if (fd < 0) {
+        return false;
+    }
+    
+    // 读取2个寄存器（温度和湿度）
+    uint16_t values[2] = {0};
+    bool success = modbusReadRegisters(fd, MODBUS_SLAVE_ADDR, TEMP_REGISTER, 2, values);
+    close(fd);
+    
+    if (success) {
+        // 根据传感器数据格式转换
+        // 常见格式：数值 / 10.0 得到实际值（如255表示25.5°C）
+        temperature = static_cast<int16_t>(values[0]) / 10.0f;
+        humidity = values[1] / 10.0f;
         
-        // 检查是否已存在
-        for (const auto& sensor : sensors) {
-            if (sensor.sensor_id == sensor_id) {
-                Logger::getInstance().log(LogLevel::WARNING, 
-                    std::string("传感器已存在: ") + sensor_id);
-                return;
-            }
-        }
+        // 更新缓存
+        cached_temperature = temperature;
+        cached_humidity = humidity;
+        cache_valid = true;
         
-        sensors.emplace_back(sensor_id, sensor_type, gpio_pin);
-        Logger::getInstance().log(LogLevel::INFO, 
-            std::string("已添加传感器: ") + sensor_id + 
-            " (类型: " + sensor_type + ", GPIO: " + std::to_string(gpio_pin) + ")");
+        Logger::getInstance().log(LogLevel::DEBUG, 
+            std::string("读取温湿度成功: T=") + std::to_string(temperature) + 
+            "°C, H=" + std::to_string(humidity) + "%");
     }
     
-    std::vector<GPIOSensor> getSensors() const {
-        std::lock_guard<std::mutex> lock(sensors_mutex);
-        return sensors;
-    }
-    
-    GPIOSensor* findSensor(const std::string& sensor_id) {
-        std::lock_guard<std::mutex> lock(sensors_mutex);
-        for (auto& sensor : sensors) {
-            if (sensor.sensor_id == sensor_id) {
-                return &sensor;
-            }
-        }
-        return nullptr;
-    }
-    
-    void updateSensorState(const std::string& sensor_id, bool state, long timestamp) {
-        std::lock_guard<std::mutex> lock(sensors_mutex);
-        for (auto& sensor : sensors) {
-            if (sensor.sensor_id == sensor_id) {
-                sensor.last_state = state;
-                sensor.last_trigger_time = timestamp;
-                break;
-            }
-        }
-    }
-};
+    return success;
+}
 
-// 静态辅助函数：读取 GPIO 引脚状态
-static bool readGPIOPin(int gpio_pin) {
+static float readTemperatureFromSensor() {
+    float temp, hum;
+    if (readTempHumidityFromModbus(temp, hum)) {
+        return temp;
+    }
+    return cache_valid ? cached_temperature : 0.0f;
+}
+
+static float readHumidityFromSensor() {
+    // 如果缓存有效，直接返回缓存的湿度（因为温度读取时已经一起读了）
+    if (cache_valid) {
+        cache_valid = false;  // 标记缓存已使用
+        return cached_humidity;
+    }
+    
+    // 如果缓存无效，重新读取
+    float temp, hum;
+    if (readTempHumidityFromModbus(temp, hum)) {
+        return hum;
+    }
+    return 0.0f;
+}
+
+// ===================== SensorService 实现 =====================
+
+SensorService::SensorService() 
+    : running_{false} {
+    // 初始化默认传感器ID
+    infrared_status_.sensor_id = "infrared_01";
+    infrared_status_.sensor_type = "infrared";
+    
+    water_status_.sensor_id = "water_01";
+    water_status_.sensor_type = "water_immersion";
+    
+    smoke_status_.sensor_id = "smoke_01";
+    smoke_status_.sensor_type = "smoke";
+    
+    temp_humidity_status_.sensor_id = "temp_humidity_01";
+    temp_humidity_status_.sensor_type = "temperature_humidity";
+    
+    Logger::getInstance().log(LogLevel::INFO, "传感器服务已创建");
+}
+
+SensorService::~SensorService() {
+    stop();
+    Logger::getInstance().log(LogLevel::INFO, "传感器服务已销毁");
+}
+
+long SensorService::getCurrentTimestamp() {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+bool SensorService::readGPIOPin(int gpio_pin) {
     std::string gpio_path = "/sys/class/gpio/gpio" + std::to_string(gpio_pin) + "/value";
     std::ifstream gpio_file(gpio_path);
     
@@ -80,13 +239,10 @@ static bool readGPIOPin(int gpio_pin) {
         gpio_file.close();
         return (value == 1);
     }
-    
-    // 模拟环境返回 false
     return false;
 }
 
-// 静态辅助函数：初始化 GPIO 引脚
-static bool initGPIOPin(int gpio_pin) {
+bool SensorService::initGPIOInput(int gpio_pin) {
     // Export GPIO
     std::ofstream export_file("/sys/class/gpio/export");
     if (export_file.is_open()) {
@@ -102,45 +258,17 @@ static bool initGPIOPin(int gpio_pin) {
         direction_file.close();
         return true;
     }
-    
-    return true; // 模拟环境也返回成功
-}
-
-// 静态辅助函数：获取当前时间戳
-static long getCurrentTimestamp() {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::system_clock::now().time_since_epoch()).count();
-}
-
-// 静态实现指针1
-static std::unique_ptr<SensorServiceImpl> s_impl;
-
-// ===================== SensorService 实现 =====================
-
-SensorService::SensorService() 
-    : running_{false} {
-    s_impl = std::make_unique<SensorServiceImpl>();
-    Logger::getInstance().log(LogLevel::INFO, "传感器服务已创建");
-}
-
-SensorService::~SensorService() {
-    stop();
-    s_impl.reset();
-    Logger::getInstance().log(LogLevel::INFO, "传感器服务已销毁");
+    return true;
 }
 
 bool SensorService::initialize() {
     Logger::getInstance().log(LogLevel::INFO, "正在初始化传感器服务...");
     
     try {
-        // 初始化所有已添加的传感器的 GPIO 引脚
-        auto sensors = s_impl->getSensors();
-        for (const auto& sensor : sensors) {
-            if (!initGPIOPin(sensor.gpio_pin)) {
-                Logger::getInstance().log(LogLevel::WARNING, 
-                    std::string("GPIO 初始化失败: ") + std::to_string(sensor.gpio_pin));
-            }
-        }
+        // 初始化GPIO引脚（红外、水浸、烟感传感器）
+        initGPIOInput(infrared_gpio_pin_);
+        initGPIOInput(water_immersion_gpio_pin_);
+        initGPIOInput(smoke_gpio_pin_);
         
         Logger::getInstance().log(LogLevel::INFO, "传感器服务初始化成功");
         return true;
@@ -180,76 +308,74 @@ bool SensorService::isRunning() const {
     return running_;
 }
 
-void SensorService::addInfraredSensor(const std::string& sensor_id, int gpio_pin) {
-    Logger::getInstance().log(LogLevel::INFO, 
-        std::string("添加红外传感器: ") + sensor_id + 
-        " (GPIO引脚: " + std::to_string(gpio_pin) + ")");
-    
-    s_impl->addSensor(sensor_id, "infrared", gpio_pin);
-    initGPIOPin(gpio_pin);
-}
-
-void SensorService::addWaterImmersionSensor(const std::string& sensor_id, int gpio_pin) {
-    Logger::getInstance().log(LogLevel::INFO, 
-        std::string("添加水浸传感器: ") + sensor_id + 
-        " (GPIO引脚: " + std::to_string(gpio_pin) + ")");
-    
-    s_impl->addSensor(sensor_id, "water_immersion", gpio_pin);
-    initGPIOPin(gpio_pin);
-}
-
-void SensorService::addSmokeSensor(const std::string& sensor_id, int gpio_pin) {
-    Logger::getInstance().log(LogLevel::INFO, 
-        std::string("添加烟雾传感器: ") + sensor_id + 
-        " (GPIO引脚: " + std::to_string(gpio_pin) + ")");
-    
-    s_impl->addSensor(sensor_id, "smoke", gpio_pin);
-    initGPIOPin(gpio_pin);
-}
-
 void SensorService::setAlarmCallback(
     std::function<void(const std::string& alarm_type, const std::string& reason)> callback) {
     alarm_callback_ = callback;
     Logger::getInstance().log(LogLevel::INFO, "已设置告警回调函数");
 }
 
-void SensorService::setDataCallback(
-    std::function<void(const std::string& sensor_type, const std::string& sensor_id,
-                      bool state, long timestamp)> callback) {
-    data_callback_ = callback;
-    Logger::getInstance().log(LogLevel::INFO, "已设置数据回调函数");
-}
-
 void SensorService::monitoringLoop() {
     Logger::getInstance().log(LogLevel::INFO, "传感器监控循环已启动");
     
-    const int POLL_INTERVAL_MS = 50;       // 50ms 轮询间隔
-    const long DEBOUNCE_TIME_MS = 100;     // 100ms 去抖时间
+    const int POLL_INTERVAL_MS = 100;  // 100ms轮询间隔
     
     while (running_) {
         try {
-            auto sensors = s_impl->getSensors();
             long current_time = getCurrentTimestamp();
             
-            for (auto& sensor : sensors) {
-                // 读取 GPIO 状态
-                bool current_state = readGPIOPin(sensor.gpio_pin);
-                
-                // 检测状态变化（带去抖）
-                if (current_state != sensor.last_state) {
-                    // 检查是否超过去抖时间
-                    if (current_time - sensor.last_trigger_time >= DEBOUNCE_TIME_MS) {
-                        // 更新状态
-                        s_impl->updateSensorState(sensor.sensor_id, current_state, current_time);
-                        
-                        // 处理传感器事件
-                        handleGPIOSensor(sensor.sensor_type, sensor.sensor_id, 
-                                        sensor.gpio_pin, current_state);
+            // 读取红外传感器
+            {
+                std::lock_guard<std::mutex> lock(status_mutex_);
+                bool triggered = readGPIOPin(infrared_gpio_pin_);
+                if (triggered != infrared_status_.triggered) {
+                    infrared_status_.triggered = triggered;
+                    infrared_status_.timestamp = current_time;
+                    if (triggered) {
+                        checkAndTriggerAlarm(infrared_status_);
                     }
                 }
+                infrared_status_.is_valid = true;
             }
             
-            // 轮询间隔
+            // 读取水浸传感器
+            {
+                std::lock_guard<std::mutex> lock(status_mutex_);
+                bool triggered = readGPIOPin(water_immersion_gpio_pin_);
+                if (triggered != water_status_.triggered) {
+                    water_status_.triggered = triggered;
+                    water_status_.timestamp = current_time;
+                    if (triggered) {
+                        checkAndTriggerAlarm(water_status_);
+                    }
+                }
+                water_status_.is_valid = true;
+            }
+            
+            // 读取烟感传感器
+            {
+                std::lock_guard<std::mutex> lock(status_mutex_);
+                bool triggered = readGPIOPin(smoke_gpio_pin_);
+                if (triggered != smoke_status_.triggered) {
+                    smoke_status_.triggered = triggered;
+                    smoke_status_.timestamp = current_time;
+                    if (triggered) {
+                        checkAndTriggerAlarm(smoke_status_);
+                    }
+                }
+                smoke_status_.is_valid = true;
+            }
+            
+            // 读取温湿度数据（通过Modbus或I2C）
+            {
+                std::lock_guard<std::mutex> lock(status_mutex_);
+                // TODO: 实际通过Modbus/I2C从温湿度传感器读取数据
+                // 示例：使用 libmodbus 或 i2c-dev 读取
+                temp_humidity_status_.temperature = readTemperatureFromSensor();
+                temp_humidity_status_.humidity = readHumidityFromSensor();
+                temp_humidity_status_.timestamp = current_time;
+                temp_humidity_status_.is_valid = true;
+            }
+            
             std::this_thread::sleep_for(std::chrono::milliseconds(POLL_INTERVAL_MS));
             
         } catch (const std::exception& e) {
@@ -261,49 +387,52 @@ void SensorService::monitoringLoop() {
     Logger::getInstance().log(LogLevel::INFO, "传感器监控循环已停止");
 }
 
-void SensorService::handleGPIOSensor(const std::string& sensor_type, 
-                                    const std::string& sensor_id,
-                                    int gpio_pin, bool triggered) {
-    Logger::getInstance().log(LogLevel::INFO, 
-        std::string("GPIO传感器事件: ") + sensor_type + 
-        " (ID: " + sensor_id + ", 引脚: " + std::to_string(gpio_pin) + 
-        ", 状态: " + (triggered ? "触发" : "恢复") + ")");
+void SensorService::checkAndTriggerAlarm(const SensorStatusData& data) {
+    if (!alarm_callback_) return;
     
-    long timestamp = getCurrentTimestamp();
+    std::string alarm_type;
+    std::string reason;
     
-    // 调用数据回调
-    if (data_callback_) {
+    if (data.sensor_type == "infrared" && data.triggered) {
+        alarm_type = "入侵检测";
+        reason = "红外传感器检测到运动: " + data.sensor_id;
+    } else if (data.sensor_type == "water_immersion" && data.triggered) {
+        alarm_type = "水浸告警";
+        reason = "水浸传感器检测到漏水: " + data.sensor_id;
+    } else if (data.sensor_type == "smoke" && data.triggered) {
+        alarm_type = "烟雾告警";
+        reason = "烟雾传感器检测到烟雾: " + data.sensor_id;
+    }
+    
+    if (!alarm_type.empty()) {
         try {
-            data_callback_(sensor_type, sensor_id, triggered, timestamp);
+            Logger::getInstance().log(LogLevel::WARNING, 
+                std::string("触发告警: ") + alarm_type + " - " + reason);
+            alarm_callback_(alarm_type, reason);
         } catch (const std::exception& e) {
             Logger::getInstance().log(LogLevel::ERROR, 
-                std::string("数据回调异常: ") + e.what());
+                std::string("告警回调异常: ") + e.what());
         }
     }
+}
+
+AllSensorStatus SensorService::getAllSensorStatus() {
+    std::lock_guard<std::mutex> lock(status_mutex_);
     
-    // 触发时生成告警
-    if (triggered && alarm_callback_) {
-        std::string alarm_type;
-        std::string reason;
-        
-        if (sensor_type == "infrared") {
-            alarm_type = "入侵检测";
-            reason = "红外传感器检测到运动: " + sensor_id;
-        } else if (sensor_type == "water_immersion") {
-            alarm_type = "水浸告警";
-            reason = "水浸传感器检测到漏水: " + sensor_id;
-        } else if (sensor_type == "smoke") {
-            alarm_type = "烟雾告警";
-            reason = "烟雾传感器检测到烟雾: " + sensor_id;
-        }
-        
-        if (!alarm_type.empty()) {
-            try {
-                alarm_callback_(alarm_type, reason);
-            } catch (const std::exception& e) {
-                Logger::getInstance().log(LogLevel::ERROR, 
-                    std::string("告警回调异常: ") + e.what());
-            }
-        }
-    }
+    AllSensorStatus status;
+    status.collect_timestamp = getCurrentTimestamp();
+    
+    // 添加所有传感器状态（用于定时上报）
+    status.sensors.push_back(infrared_status_);
+    status.sensors.push_back(water_status_);
+    status.sensors.push_back(smoke_status_);
+    status.sensors.push_back(temp_humidity_status_);
+    
+    return status;
+}
+
+SensorStatusData SensorService::readTemperatureHumidity() {
+    std::lock_guard<std::mutex> lock(status_mutex_);
+    temp_humidity_status_.timestamp = getCurrentTimestamp();
+    return temp_humidity_status_;
 }

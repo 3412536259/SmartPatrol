@@ -2,22 +2,119 @@
 #include "camera_manager.h"
 
 #include <iostream>
+#include <chrono>
+
 DeviceManager::DeviceManager()
 {
     cameraManager_ = std::make_shared<CameraManager>();
-    // sensorManager_ = std::make_shared<SensorManager>();
+    sensorService_ = std::make_shared<SensorService>();
+    controllerService_ = std::make_shared<ControllerService>();
     configUpdater_ = std::make_shared<ConfigUpdater>();
 }
 
 DeviceManager::~DeviceManager()
-{}
+{
+    stopServices();
+}
+
+bool DeviceManager::initializeSensorService()
+{
+    if (!sensorService_) {
+        std::cerr << "DeviceManager: sensorService_ is null!" << std::endl;
+        return false;
+    }
+    return sensorService_->initialize();
+}
+
+bool DeviceManager::initializeControllerService()
+{
+    if (!controllerService_) {
+        std::cerr << "DeviceManager: controllerService_ is null!" << std::endl;
+        return false;
+    }
+    // 添加默认门锁设备
+    controllerService_->addDoorLock("door_lock_01", 22);
+    return controllerService_->initialize();
+}
+
+void DeviceManager::startServices()
+{
+    if (sensorService_) {
+        sensorService_->start();
+    }
+    if (controllerService_) {
+        controllerService_->start();
+    }
+}
+
+void DeviceManager::stopServices()
+{
+    if (sensorService_) {
+        sensorService_->stop();
+    }
+    if (controllerService_) {
+        controllerService_->stop();
+    }
+}
 
 DeviceStatus DeviceManager::getStatus()
 {
     DeviceStatus deviceStatus;
     deviceStatus.cameraStatusList = cameraManager_->getAllStatus();
+    
+    // 获取传感器状态
+    if (sensorService_) {
+        deviceStatus.sensorStatus = sensorService_->getAllSensorStatus();
+    }
 
     return deviceStatus;
+}
+
+// =================== 传感器相关实现 ===================
+
+AllSensorStatus DeviceManager::getAllSensorStatus()
+{
+    AllSensorStatus status;
+    if (!sensorService_) {
+        std::cerr << "DeviceManager: sensorService_ is null!" << std::endl;
+        return status;
+    }
+    return sensorService_->getAllSensorStatus();
+}
+
+SensorStatusData DeviceManager::getTemperatureHumidity()
+{
+    SensorStatusData data;
+    if (!sensorService_) {
+        std::cerr << "DeviceManager: sensorService_ is null!" << std::endl;
+        return data;
+    }
+    return sensorService_->readTemperatureHumidity();
+}
+
+// =================== 门锁控制（由控制器服务管理，仅开锁）===================
+
+DoorLockOperationResult DeviceManager::openDoorLock(const std::string& lockId)
+{
+    DoorLockOperationResult result;
+    if (!controllerService_) {
+        result.success = false;
+        result.message = "controllerService_ is null";
+        return result;
+    }
+    
+    // turnOn 对于门锁表示解锁
+    bool success = controllerService_->turnOn(lockId);
+    result.success = success;
+    result.message = success ? "Door lock opened successfully" : "Failed to open door lock";
+    return result;
+}
+
+void DeviceManager::setAlarmCallback(std::function<void(const std::string&, const std::string&)> callback)
+{
+    if (sensorService_) {
+        sensorService_->setAlarmCallback(callback);
+    }
 }
 
 RealImageList DeviceManager::getAllRealImage()

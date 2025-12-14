@@ -24,7 +24,7 @@ static bool initGPIOOutput(int gpio_pin) {
         direction_file.close();
         return true;
     }
-    return true; // 模拟环境也返回成功1
+    return false;
 }
 
 static bool setGPIOValue(int gpio_pin, bool value) {
@@ -36,7 +36,7 @@ static bool setGPIOValue(int gpio_pin, bool value) {
         gpio_file.close();
         return true;
     }
-    return true; // 模拟环境也返回成功
+    return false;
 }
 
 // ===================== DoorLockDevice 实现 =====================
