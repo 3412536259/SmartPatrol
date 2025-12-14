@@ -15,6 +15,8 @@ set(MQTT_LIBS
 set(SRC_FILES
     
     ../test/taskTest.cpp
+    business_layer/sensor/sensor_service.cpp
+    business_layer/sensor/controller_service.cpp
     business_layer/camera/camera_manager.cpp
     business_layer/camera/camera.cpp
     business_layer/device/device_manager.cpp
@@ -51,7 +53,9 @@ add_executable(main ${SRC_FILES})  # 可执行文件名：ai_recognition
 
 # -------------------------- 3. 配置头文件路径 --------------------------
 target_include_directories(main PUBLIC
+    ${CMAKE_SOURCE_DIR}/include/data_layer/sensor
     ${CMAKE_SOURCE_DIR}/include/data_layer/camera
+    ${CMAKE_SOURCE_DIR}/include/business_layer/sensor
     ${CMAKE_SOURCE_DIR}/include/business_layer/camera
     ${CMAKE_SOURCE_DIR}/include/business_layer/device
     ${CMAKE_SOURCE_DIR}/include/business_layer/task
@@ -72,6 +76,7 @@ target_include_directories(main PUBLIC
     ${CMAKE_SOURCE_DIR}/include/business_layer/http
     ${CMAKE_SOURCE_DIR}/include/business_layer/config
     ${CMAKE_SOURCE_DIR}/include/business_layer/http
+    
     
     ${STB_INCLUDES}
     ${LIBJPEG_INCLUDES}

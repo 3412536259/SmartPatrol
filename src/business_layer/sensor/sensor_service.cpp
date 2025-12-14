@@ -1,5 +1,5 @@
-#include "business_layer/sensor/sensor_service.h"
-#include "common/logger/logger.h"
+#include "sensor_service.h"
+#include "logger.h"
 #include <chrono>
 #include <fstream>
 #include <fcntl.h>
