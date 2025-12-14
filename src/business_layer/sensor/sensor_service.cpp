@@ -1,5 +1,5 @@
-#include "business_layer/sensor/sensor_service.h"
-#include "common/logger/logger.h"
+#include "sensor_service.h"
+#include "logger.h"
 #include <chrono>
 #include <fstream>
 #include <fcntl.h>
@@ -168,9 +168,9 @@ static bool readTempHumidityFromModbus(float& temperature, float& humidity) {
         cached_humidity = humidity;
         cache_valid = true;
         
-        Logger::getInstance().log(LogLevel::DEBUG, 
-            std::string("读取温湿度成功: T=") + std::to_string(temperature) + 
-            "°C, H=" + std::to_string(humidity) + "%");
+        // Logger::getInstance().log(LogLevel::DEBUG, 
+        //     std::string("读取温湿度成功: T=") + std::to_string(temperature) + 
+        //     "°C, H=" + std::to_string(humidity) + "%");
     }
     
     return success;

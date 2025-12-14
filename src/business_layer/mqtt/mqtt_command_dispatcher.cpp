@@ -1,10 +1,5 @@
 #include "mqtt_command_dispatcher.h"
 #include "mqtt_topics.h"
-// const std::string GET_REAL_IMAGE_TOPIC = "device/camera/getRealImage";
-// const std::string OPERATE_PLC_TOPIC = "device/plc/operate";
-// const std::string UPDATE_CONFIG_TOPIC = "device/config/update";
-// const std::string GET_SENSOR_DATA_TOPIC = "device/sensor/status";
-// const std::string GET_ALL_DEVICE_STATUS_TOPIC = "device/status/getall";
 
 MqttCommandDispatcher::MqttCommandDispatcher(JobScheduler& scheduler)
     :scheduler_(scheduler){}
