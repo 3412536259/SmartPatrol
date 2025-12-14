@@ -1,7 +1,7 @@
 #ifndef CONTROLLER_SERVICE_H
 #define CONTROLLER_SERVICE_H
 
-#include "data_layer/icontroller.h"
+#include "data_layer/sensor/icontroller.h"
 #include <memory>
 #include <thread>
 #include <atomic>

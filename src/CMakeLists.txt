@@ -21,6 +21,8 @@ set(SRC_FILES
     business_layer/task/job_scheduler.cpp
     business_layer/mqtt/mqtt_service.cpp
     business_layer/mqtt/mqtt_command_dispatcher.cpp
+    business_layer/sensor/sensor_service.cpp
+    business_layer/sensor/controller_service.cpp
     data_layer/video_capture.cpp
     data_layer/video_storage.cpp
     data_layer/sensor_reader.cpp
@@ -41,12 +43,13 @@ target_include_directories(main PUBLIC
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/data_layer
     ${CMAKE_SOURCE_DIR}/include/data_layer/camera
+    ${CMAKE_SOURCE_DIR}/include/data_layer/sensor
     ${CMAKE_SOURCE_DIR}/include/business_layer
     ${CMAKE_SOURCE_DIR}/include/business_layer/camera
     ${CMAKE_SOURCE_DIR}/include/business_layer/device
     ${CMAKE_SOURCE_DIR}/include/business_layer/task
     ${CMAKE_SOURCE_DIR}/include/business_layer/mqtt
-    ${CMAKE_SOURCE_DIR}/include/business_layer/sensor_service
+    ${CMAKE_SOURCE_DIR}/include/business_layer/sensor
     ${CMAKE_SOURCE_DIR}/include/common
     ${CMAKE_SOURCE_DIR}/include/common/FileUtils
     ${CMAKE_SOURCE_DIR}/include/common/utils/yolo8

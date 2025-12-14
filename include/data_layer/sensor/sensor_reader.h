@@ -1,7 +1,7 @@
 #ifndef SENSOR_READER_H
 #define SENSOR_READER_H
 
-#include "data_layer/isensor.h"
+#include "data_layer/sensor/isensor.h"
 #include <thread>
 #include <atomic>
 #include <memory>
