@@ -5,7 +5,7 @@
 #include "config_info.h"
 #include "config_parser.h"
 #include "mqtt_topics.h"
-
+//摄像头---------------------------
 void GetCameraRealImageTask::run(TaskContext& ctx)
 {
     RealImage image = ctx.devMgr->getRealImage(camId_);
@@ -29,6 +29,8 @@ void GetCameraRealImageTask::run(TaskContext& ctx)
     std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
+//摄像头---------------------------
+
 // =================== 传感器任务实现 ===================
 
 void OpenDoorLockTask::run(TaskContext& ctx)
@@ -44,70 +46,7 @@ void OpenDoorLockTask::run(TaskContext& ctx)
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 
-void UploadSensorStatusTask::run(TaskContext& ctx)
-{
-    // 定时上传所有传感器状态
-    AllSensorStatus status = ctx.devMgr->getAllSensorStatus();
-    nlohmann::json j;
-    j["timestamp"] = status.collect_timestamp;
-    j["reportType"] = "periodic";  // 标记为定时上报
-    
-    // 传感器状态数组
-    nlohmann::json sensors = nlohmann::json::array();
-    for (const auto& sensor : status.sensors) {
-        nlohmann::json s;
-        s["sensorId"] = sensor.sensor_id;
-        s["type"] = sensor.sensor_type;
-        s["isValid"] = sensor.is_valid;
-        s["timestamp"] = sensor.timestamp;
-        
-        if (sensor.sensor_type == "temperature_humidity") {
-            s["temperature"] = sensor.temperature;
-            s["humidity"] = sensor.humidity;
-        } else {
-            s["triggered"] = sensor.triggered;
-        }
-        sensors.push_back(s);
-    }
-    j["sensors"] = sensors;
-    
-    ctx.publisher->publish(SENSOR_STATUS_UPLOAD_TOPIC, j.dump());
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-}
-
-void GetSensorDataTask::run(TaskContext& ctx)
-{
-    // 根据sensorId获取指定传感器数据
-    AllSensorStatus allStatus = ctx.devMgr->getAllSensorStatus();
-    nlohmann::json j;
-    j["sensorId"] = sensorId_;
-    
-    bool found = false;
-    for (const auto& sensor : allStatus.sensors) {
-        if (sensor.sensor_id == sensorId_) {
-            j["type"] = sensor.sensor_type;
-            j["isValid"] = sensor.is_valid;
-            j["timestamp"] = sensor.timestamp;
-            
-            if (sensor.sensor_type == "temperature_humidity") {
-                j["temperature"] = sensor.temperature;
-                j["humidity"] = sensor.humidity;
-            } else {
-                j["triggered"] = sensor.triggered;
-            }
-            found = true;
-            break;
-        }
-    }
-    
-    if (!found) {
-        j["code"] = "sensor not found";
-        j["isValid"] = false;
-    }
-    
-    ctx.publisher->publish(RESULT_GET_SENSOR_DATA_TOPIC, j.dump());
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-}
+// =================== 传感器任务实现 ===================
 
 void GetDeviceStatusTask::run(TaskContext& ctx)
 {

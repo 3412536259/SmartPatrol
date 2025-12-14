@@ -21,14 +21,14 @@ void MqttCommandDispatcher::onMessage(const std::string& topic, const std::strin
     if (topic == GET_REAL_IMAGE_TOPIC) {
         handleGetRealImage(j);
     }
-    else if (topic == UPDATE_CONFIG_TOPIC) {
-        handleUpdateConfig(j);
-    }
     else if(topic == GET_ALL_DEVICE_STATUS_TOPIC){
         handleGetAllDeviceStatus(j);
     }
     else if(topic == UPDATE_CONFIG_TOPIC){
         handleConfigUpdate(j);
+    }
+    else if(topic == DOOR_LOCK_CONTROL_TOPIC){
+        handleOpenDoorLock(j);
     }
     else {
         std::cout << "Unknown topic: " << topic << std::endl;
@@ -48,16 +48,6 @@ void MqttCommandDispatcher::handleGetRealImage(const nlohmann::json& j)
               << " for cam=" << camId << std::endl;
 }
 
-void MqttCommandDispatcher::handleGetSensorData(const nlohmann::json& j)
-{
-    if(!j.contains("sensorId")) return;
-    std::string sensorId = j["sensorId"];
-    auto task = std::make_shared<GetSensorDataTask>(sensorId);
-    int id = scheduler_.submit(task, "mqtt");
-
-    std::cout << "Submitted GetSensorDataTask id=" << id 
-              << " for sensor=" << sensorId << std::endl;
-}
 
 void MqttCommandDispatcher::handleGetAllDeviceStatus(const nlohmann::json& j)
 {
@@ -75,4 +65,17 @@ void MqttCommandDispatcher::handleConfigUpdate(const nlohmann::json& j){
     int id = scheduler_.submit(task, "mqtt");
 
     std::cout<<"Submitted UpdateConfigTask id=" <<id<<std::endl;
+}
+
+void MqttCommandDispatcher::handleOpenDoorLock(const nlohmann::json& j)
+{
+    if (!j.contains("lockId")) return;
+
+    std::string lockId = j["lockId"];
+
+    auto task = std::make_shared<OpenDoorLockTask>(lockId);
+    int id = scheduler_.submit(task, "mqtt");
+
+    std::cout << "Submitted OpenDoorLockTask id=" << id 
+              << " for lockId=" << lockId << std::endl;
 }

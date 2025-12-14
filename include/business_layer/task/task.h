@@ -30,26 +30,6 @@ private:
     std::string lockId_;
 };
 
-// 定时上传传感器状态任务（用于定时任务）
-class UploadSensorStatusTask : public ITask
-{
-public:
-    UploadSensorStatusTask() {}
-    std::string name() const override { return "UploadSensorStatus"; }
-    void run(TaskContext& ctx) override;
-};
-
-class GetSensorDataTask : public ITask
-{
-public:
-    GetSensorDataTask(std::string sensorId)
-        : sensorId_(sensorId) {}
-    std::string name() const override { return "GetSensorData"; }
-    void run(TaskContext& ctx) override;
-private:
-    std::string sensorId_;
-};
-
 
 class GetDeviceStatusTask : public ITask
 {
