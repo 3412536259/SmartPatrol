@@ -24,13 +24,10 @@ void MqttCommandDispatcher::onMessage(const std::string& topic, const std::strin
     else if (topic == UPDATE_CONFIG_TOPIC) {
         handleUpdateConfig(j);
     }
-    else if(topic == GET_SENSOR_DATA_TOPIC) {
-        handleGetSensorData(j);
-    }
     else if(topic == GET_ALL_DEVICE_STATUS_TOPIC){
         handleGetAllDeviceStatus(j);
     }
-    else if(topic == UPDATE_CONFIG){
+    else if(topic == UPDATE_CONFIG_TOPIC){
         handleConfigUpdate(j);
     }
     else {
@@ -61,15 +58,9 @@ void MqttCommandDispatcher::handleGetSensorData(const nlohmann::json& j)
     std::cout << "Submitted GetSensorDataTask id=" << id 
               << " for sensor=" << sensorId << std::endl;
 }
-void MqttCommandDispatcher::handleUpdateConfig(const nlohmann::json& j)
-{
-
-}
-
 
 void MqttCommandDispatcher::handleGetAllDeviceStatus(const nlohmann::json& j)
 {
-    std::cout << "1111111111111111111111" << std::endl;
     auto task = std::make_shared<GetDeviceStatusTask>();
     int id = scheduler_.submit(task, "mqtt");
 

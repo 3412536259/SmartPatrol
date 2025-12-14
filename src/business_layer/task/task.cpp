@@ -210,12 +210,12 @@ void UpdateConfigTask::run(TaskContext& ctx){
     {
         nlohmann::json ack;
         ack["success"] = true;
-        ctx.publisher->publish(RESULT_UPDATE_CONFIG, ack.dump());
+        ctx.publisher->publish(RESULT_UPDATE_CONFIG_TOPIC, ack.dump());
     }
     UpdateConfigResult res = ctx.devMgr->configUpdate(JsonStr_);
     nlohmann::json j;
     if(!res.isSuccess) j["code"] = "update failed";
     j["message"] = res.message;
-    ctx.publisher->publish(RESULT_UPDATE_CONFIG, j.dump());
+    ctx.publisher->publish(RESULT_UPDATE_CONFIG_TOPIC, j.dump());
     std::this_thread::sleep_for(std::chrono::seconds(1));
 }
