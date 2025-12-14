@@ -3,6 +3,7 @@
 #include <string>
 #include "camera_info.h"
 #include "device_info.h"
+#include "sensor_service.h"
 
 class IDeviceManager{
 public:
@@ -18,6 +19,9 @@ public:
     virtual UpdateConfigResult configUpdate(const std::string& JsonStr) = 0;
 
     // =================== 传感器相关接口 ===================
+    
+    // 读取温湿度数据
+    virtual SensorStatusData getTemperatureHumidity() = 0;
     
     // 门锁控制（仅开锁）
     virtual DoorLockOperationResult openDoorLock(const std::string& lockId) = 0;
