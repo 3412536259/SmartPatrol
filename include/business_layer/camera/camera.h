@@ -28,7 +28,7 @@ private:
     VideoCapture videoCapture_;    
     std::mutex keyFrameMutex_;
     std::mutex statusMutex_;
-
+    
 };
 
 

@@ -6,6 +6,7 @@ DeviceManager::DeviceManager()
 {
     cameraManager_ = std::make_shared<CameraManager>();
     // sensorManager_ = std::make_shared<SensorManager>();
+    configUpdater_ = std::make_shared<ConfigUpdater>();
 }
 
 DeviceManager::~DeviceManager()
@@ -14,30 +15,35 @@ DeviceManager::~DeviceManager()
 DeviceStatus DeviceManager::getStatus()
 {
     DeviceStatus deviceStatus;
-    deviceStatus.cameraStatus_ = cameraManager_->getAllStatus();
-    for(auto& kv : deviceStatus.cameraStatus_)
-    {
-        std::cout << kv.camera_id << kv.online_status << std::endl;
-    }
+    deviceStatus.cameraStatusList = cameraManager_->getAllStatus();
+
     return deviceStatus;
 }
 
-void DeviceManager::getAllRealImage()
+RealImageList DeviceManager::getAllRealImage()
 {
-    if(!cameraManager_) return;
-    
+    RealImageList list;
+    RealImage image;
+    if(!cameraManager_)
+    {
+        list.success = false;
+        return list;
+    }
     auto allFrames = cameraManager_->getAllLastKeyFrames();
 
     for(auto& kv : allFrames)
     {
         std::string id = kv.first;
         const FrameData& frame = kv.second;
+        image.integrity = true;
+        image.frame = frame;
+        image.sourceCameraId = id;
+        list.RealImages.push_back(image);
         // TODO: 上传云端或回调 UI
         // cloudUploader.uploadRealImage(id, frame);
-        std::cout << "DeviceManager: Real frame for camera "
-                  << id << " timestamp=" << frame.timestamp << std::endl;
-        
+ 
     }
+    return list;
 }
 
 RealImage DeviceManager::getRealImage(const std::string& camId)
@@ -79,19 +85,16 @@ void DeviceManager::getHistoryImage(const std::string& camId)
 {
 
 }
-void DeviceManager::operateCamera()
-{
 
-}
-void DeviceManager::operatePlc(const std::string &deviceId, const std::string &cmd)
-{
-    // OperateResult res = plcManager_->operate(deviceId,cmd);
-    // TODO：把 res 传递到云端 或者回调给上层
-    // 示例（你之后自己替换上传函数）：
-    // cloudUploader_.uploadRealImage(deviceId, res);
-}
     
-void DeviceManager::updateConfig()
+UpdateConfigResult DeviceManager::configUpdate(const std::string& JsonStr)
 {
+    UpdateConfigResult result;
+    if(!configUpdater_) {
+        result.message = "no configUpdater_";
+        return result;
+    } 
 
+    result = configUpdater_->updateConfig(JsonStr);
+    return result;
 }

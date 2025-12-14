@@ -22,5 +22,4 @@ private:
     mqtt::async_client client_;
     ICommandDispatcher* dispatcher_;
 };
-
 #endif

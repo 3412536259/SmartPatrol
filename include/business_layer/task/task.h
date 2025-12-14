@@ -15,6 +15,36 @@ public:
 
 private:
     std::string camId_;
+}; 
+
+
+class GetSensorDataTask : public ITask
+{
+public:
+    GetSensorDataTask(std::string sensorId)
+        : sensorId_(sensorId) {}
+    std::string name() const override { return "GetSensorData"; }
+    void run(TaskContext& ctx) override;
+private:
+    std::string sensorId_;
 };
 
+
+class GetDeviceStatusTask : public ITask
+{
+public:
+    GetDeviceStatusTask() {}
+    std::string name() const override { return "GetDeviceStatus";}
+    void run(TaskContext& ctx) override;
+};
+
+class UpdateConfigTask : public ITask
+{
+public:
+    UpdateConfigTask(const std::string& JsonStr) : JsonStr_(JsonStr) {}
+    std::string name() const override { return "UpdateConfig"; }
+    void run(TaskContext& ctx) override;
+private:
+    std::string JsonStr_;
+};
 #endif

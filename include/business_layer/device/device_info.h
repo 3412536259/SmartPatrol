@@ -7,7 +7,7 @@
 #include <vector>
 struct DeviceStatus
 {
-    std::vector<CameraStatus> cameraStatus_;
+    CameraStatusList cameraStatusList;
     // std::vector<PLCInfo> plcStatus_;
     // std::vector<SensorData> sensorStatus_;
 
@@ -20,4 +20,14 @@ struct RealImage
     bool integrity = false;
 };
 
+struct RealImageList
+{
+    std::vector<RealImage> RealImages;
+    bool success = true;
+};
+
+struct UpdateConfigResult{
+    bool isSuccess = false;
+    std::string message;
+};
 #endif

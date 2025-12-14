@@ -1,5 +1,5 @@
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               #include "camera_manager.h"
-// #include "config_parser.h"
+#include "camera_manager.h"
+#include "config_parser.h"
 #include <iostream>
 CameraManager::CameraManager()
 {
@@ -15,30 +15,16 @@ CameraManager::~CameraManager()
 bool CameraManager::registerDevices()
 {
     // TODO: 根据你自己的业务从 DB / 配置文件 / 网络拉取列表
-    // auto& config = ConfigParser::getInstance().getConfig();
+    auto& config = ConfigParser::getInstance().getConfig();
     
-    // for(auto& kv : config.cameras)
-    // {
-    //     CameraStaticInfo info;
-    //     info.camera_id = kv.id;
-    //     info.rtsp_url = kv.url;
-    //     info.name = kv.name;
-    //     addCamera(info);
-    // }
-
-    CameraStaticInfo info1;
-    CameraStaticInfo info2;
-    info1.camera_id = "1";
-    info1.name = "hh";
-    info1.rtsp_url = "rtsp://admin:Wlkjaqxy411@10.9.255.21:554/Streaming/Channels/101";
-    // info1.rtsp_url = "rtsp://admin:051127djq@192.168.31.3:554/Streaming/Channels/101";
-
-    info2.camera_id = "2";
-    info2.name = "h";
-    // info2.rtsp_url = "rtsp://admin:051127djq@192.168.31.32:554/Streaming/Channels/101";
-    info2.rtsp_url = "rtsp://admin:Wlkjaqxy411@10.9.255.21:554/Streaming/Channels/201";
-    addCamera(info1);
-    addCamera(info2);
+    for(auto& kv : config.cameras)
+    {
+        CameraStaticInfo info;
+        info.camera_id = kv.id;
+        info.rtsp_url = kv.url;
+        info.name = kv.name;
+        addCamera(info);
+    }
 
     return true;
 }
@@ -112,14 +98,14 @@ CameraStatus CameraManager::getStatus(const CameraStaticInfo& info) {
     return cameras_[id]->getStatus();
 }
 
-std::vector<CameraStatus> CameraManager::getAllStatus() {
+CameraStatusList CameraManager::getAllStatus() {
+    CameraStatusList cameraStatusList;
     std::lock_guard<std::mutex> lock(mutex_);
 
-    std::vector<CameraStatus> result;
     for (auto& camera : cameras_) {
-        result.push_back(camera.second->getStatus());
+        cameraStatusList.cameraStatus.push_back(camera.second->getStatus());
     }
-    return result;
+    return cameraStatusList;
 }
 
 bool CameraManager::getCameraLastKeyFrame(const CameraStaticInfo& info, FrameData& out) {
