@@ -14,8 +14,6 @@ public:
     virtual void getHistoryImage(const std::string& camId) = 0;
     virtual void getAllHistoryImage() = 0;
     
-    virtual void operateCamera() = 0;
-    virtual void operatePlc(const std::string &deviceId, const std::string &cmd) = 0;
 
     virtual UpdateConfigResult configUpdate(const std::string& JsonStr) = 0;
 

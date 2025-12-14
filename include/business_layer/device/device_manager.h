@@ -16,10 +16,7 @@ public:
     RealImage getRealImage(const std::string& camId) override;
     void getAllHistoryImage() override;
     void getHistoryImage(const std::string& camId) override;
-    
-    void operateCamera() override;
-    void operatePlc(const std::string &deviceId, const std::string &cmd) override;
-    
+
     UpdateConfigResult configUpdate(const std::string& JsonStr) override;
 
 private:

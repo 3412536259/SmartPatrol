@@ -85,17 +85,7 @@ void DeviceManager::getHistoryImage(const std::string& camId)
 {
 
 }
-void DeviceManager::operateCamera()
-{
 
-}
-void DeviceManager::operatePlc(const std::string &deviceId, const std::string &cmd)
-{
-    // OperateResult res = plcManager_->operate(deviceId,cmd);
-    // TODO：把 res 传递到云端 或者回调给上层
-    // 示例（你之后自己替换上传函数）：
-    // cloudUploader_.uploadRealImage(deviceId, res);
-}
     
 UpdateConfigResult DeviceManager::configUpdate(const std::string& JsonStr)
 {
