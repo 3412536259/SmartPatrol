@@ -6,6 +6,7 @@ DeviceManager::DeviceManager()
 {
     cameraManager_ = std::make_shared<CameraManager>();
     // sensorManager_ = std::make_shared<SensorManager>();
+    configUpdater_ = std::make_shared<ConfigUpdater>();
 }
 
 DeviceManager::~DeviceManager()
@@ -96,7 +97,14 @@ void DeviceManager::operatePlc(const std::string &deviceId, const std::string &c
     // cloudUploader_.uploadRealImage(deviceId, res);
 }
     
-void DeviceManager::updateConfig()
+UpdateConfigResult DeviceManager::configUpdate(const std::string& JsonStr)
 {
+    UpdateConfigResult result;
+    if(!configUpdater_) {
+        result.message = "no configUpdater_";
+        return result;
+    } 
 
+    result = configUpdater_->updateConfig(JsonStr);
+    return result;
 }

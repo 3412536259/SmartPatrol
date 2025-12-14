@@ -30,6 +30,9 @@ void MqttCommandDispatcher::onMessage(const std::string& topic, const std::strin
     else if(topic == GET_ALL_DEVICE_STATUS_TOPIC){
         handleGetAllDeviceStatus(j);
     }
+    else if(topic == UPDATE_CONFIG){
+        handleConfigUpdate(j);
+    }
     else {
         std::cout << "Unknown topic: " << topic << std::endl;
     }
@@ -71,4 +74,14 @@ void MqttCommandDispatcher::handleGetAllDeviceStatus(const nlohmann::json& j)
     int id = scheduler_.submit(task, "mqtt");
 
     std::cout << "submitted GetDeviceStatusTask id=" << id << std::endl;
+}
+
+void MqttCommandDispatcher::handleConfigUpdate(const nlohmann::json& j){
+    if(!j.contains("new_config_data")) return;
+    std::string newConfigJson = j.at("new_config_data").get<std::string>();
+    
+    auto task = std::make_shared<UpdateConfigTask>(newConfigJson);
+    int id = scheduler_.submit(task, "mqtt");
+
+    std::cout<<"Submitted UpdateConfigTask id=" <<id<<std::endl;
 }

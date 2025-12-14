@@ -11,6 +11,7 @@
 #define GET_SENSOR_DATA_TOPIC                  BOX_ID + "/device/sensor/status"
 #define GET_ALL_DEVICE_STATUS_TOPIC            BOX_ID + "/device/status/getall"
 #define OPERATE_CAR_TOPIC                      BOX_ID + "/device/carControl"
+#define UPDATE_CONFIG                          BOX_ID + "/device/config"
 
 #define RESULT_GET_REAL_IMAGE_TOPIC            BOX_ID + "/device/camera/getRealImage/result"
 #define RESULT_OPERATE_PLC_TOPIC               BOX_ID + "/device/plc/operate/result"
@@ -18,5 +19,6 @@
 #define RESULT_GET_SENSOR_DATA_TOPIC           BOX_ID + "/device/sensor/status/result"
 #define RESULT_GET_ALL_DEVICE_STATUS_TOPIC     BOX_ID + "/device/status/getall/result"
 #define RESULT_OPERATE_CAR_TOPIC               BOX_ID + "/device/carControl/result"
+#define RESULT_UPDATE_CONFIG                   BOX_ID + "/device/config/result"
 
 #endif // DEVICE_TOPICS_H

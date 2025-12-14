@@ -27,6 +27,9 @@ set(SRC_FILES
     business_layer/ai/ai_model_service.cpp
     data_layer/video_capture.cpp
     data_layer/video_storage.cpp
+    business_layer/config/update_config.cpp
+    business_layer/http/WebService.cpp
+    business_layer/http/WebController.cpp
     ../include/common/FileUtils/FileUtils.cpp
     ../include/common/utils/yolo8/postprocess.cc
     ../include/common/utils/yolo8/yolov8.cc
@@ -67,6 +70,8 @@ target_include_directories(main PUBLIC
     ${CMAKE_SOURCE_DIR}/third_party/json
     ${CMAKE_SOURCE_DIR}/include/presentation_layer
     ${CMAKE_SOURCE_DIR}/include/business_layer/http
+    ${CMAKE_SOURCE_DIR}/include/business_layer/config
+    ${CMAKE_SOURCE_DIR}/include/business_layer/http
     
     ${STB_INCLUDES}
     ${LIBJPEG_INCLUDES}
@@ -75,6 +80,7 @@ target_include_directories(main PUBLIC
     ${LIBSNDFILE_INCLUDES}
     ${CMAKE_SOURCE_DIR}/include/common/rknn/utils
     ${OpenCV_INCLUDE_DIRS}
+    ${CURL_INCLUDE_DIR}
 )
 # link_directories(
 #     ${PROJECT_SOURCE_DIR}/lib  # 告诉编译器从项目 lib 目录找库
@@ -107,6 +113,7 @@ target_link_libraries(main PUBLIC
     OpenSSL::Crypto
     Threads::Threads
 
+    ${CURL_LIBRARIES}
 
     # 系统库
     dl

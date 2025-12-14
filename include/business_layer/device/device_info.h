@@ -25,4 +25,9 @@ struct RealImageList
     std::vector<RealImage> RealImages;
     bool success = true;
 };
+
+struct UpdateConfigResult{
+    bool isSuccess = false;
+    std::string message;
+};
 #endif

@@ -9,7 +9,7 @@
 #include "ai_recognize.h"
 #include <memory>
 #include <thread>
-
+#include "WebService.h"
 #include "device_status_reporter.h"
 #include "mqtt_topics.h"
 const std::string MODELPATH = "/home/ztl/workspace/allin/allin/model/yolov8n3576_i8.rknn";
@@ -26,8 +26,12 @@ int main()
     MqttCommandDispatcher cmdDispatcher(jobscheduler);  //根据接收的主题来选择调用的处理任务，需要依赖jobscheduler的接口提交任务
     MqttService mqtt("mqtt://broker.emqx.io:1883", "edge-box", &cmdDispatcher);
     MqttPublisher mqttPublisher(&mqtt);
+    HttpPublisher httpPublisher("http://192.168.31.143:8080/report");
     jobscheduler.setMqttPublisher(&mqttPublisher); //依赖publisher的唯一原因是需要将publisher传入Taskcontext供具体task调用
-
+    jobscheduler.setHttpPublisher(&httpPublisher);
+    // start HTTP service
+    WebService ws(CONFIGPATH, 8081, ideviceManager.get(), &jobscheduler);
+    ws.start();
 
     //AI ---------------------------
     auto model = std::make_unique<AIModelService>(MODELPATH);

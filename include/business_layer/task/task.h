@@ -37,4 +37,14 @@ public:
     std::string name() const override { return "GetDeviceStatus";}
     void run(TaskContext& ctx) override;
 };
+
+class UpdateConfigTask : public ITask
+{
+public:
+    UpdateConfigTask(const std::string& JsonStr) : JsonStr_(JsonStr) {}
+    std::string name() const override { return "UpdateConfig"; }
+    void run(TaskContext& ctx) override;
+private:
+    std::string JsonStr_;
+};
 #endif

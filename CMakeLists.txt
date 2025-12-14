@@ -21,7 +21,7 @@ if(OpenCV_FOUND)
 else()
     message(FATAL_ERROR "❌ 未找到系统 OpenCV")
 endif()
-
+find_package(CURL REQUIRED)
 add_subdirectory(include/common/rknn/3rdparty)
 add_subdirectory(include/common/rknn/utils)
 add_subdirectory(src)
