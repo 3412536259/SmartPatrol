@@ -66,6 +66,39 @@ struct SensorConfig {
     int regCount = 2;
 };
 
+// ---------------- GPIO Sensor (红外、水浸、烟感) ----------------
+struct GPIOSensorConfig {
+    std::string id;
+    std::string name;
+    std::string type;        // "infrared", "water_immersion", "smoke"
+    int gpioPin = 0;
+    std::string description;
+};
+
+// ---------------- 温湿度传感器配置 ----------------
+struct TempHumiditySensorConfig {
+    std::string id;
+    std::string name;
+    int modbusAddr = 1;
+    int tempRegister = 0;
+    int humidityRegister = 1;
+    int regCount = 2;
+};
+
+struct TempHumiditySerialConfig {
+    SerialConfig serial;
+    std::vector<TempHumiditySensorConfig> sensors;
+};
+
+// ---------------- 门锁配置 ----------------
+struct DoorLockConfig {
+    std::string id;
+    std::string name;
+    std::string type;        // "gpio"
+    int gpioPin = 0;
+    std::string description;
+};
+
 // ---------------- Gateway (业务网关信息) ----------------
 struct GatewayConfig {
     std::string id;
@@ -93,9 +126,12 @@ struct DeviceConfigRoot {
     std::string boxId = "1";
 
     std::vector<CameraConfig> cameras;
-    std::vector<PLCConfig> plcs;            // <-- 新增
+    std::vector<PLCConfig> plcs;
     std::vector<PLCDeviceConfig> plcDevices;
     std::vector<SensorConfig> sensors;
+    std::vector<GPIOSensorConfig> gpioSensors;           // GPIO传感器（红外、水浸、烟感）
+    TempHumiditySerialConfig tempHumiditySensor;         // 温湿度传感器配置
+    std::vector<DoorLockConfig> doorLocks;               // 门锁配置
     std::vector<GatewayConfig> gateways;
     std::vector<CarControlConfig> carControls;
 };

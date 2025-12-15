@@ -43,6 +43,9 @@ bool ConfigParser::loadFromFile(const std::string& path)
     parsePLCList(devs);        // ⭐ 新增
     parsePLCDevices(devs);     // 改写后的
     parseSensors(devs);
+    parseGPIOSensors(devs);           // GPIO传感器（红外、水浸、烟感）
+    parseTempHumiditySensor(devs);    // 温湿度传感器
+    parseDoorLocks(devs);             // 门锁
     parseCarControls(devs);
     parseGateways(devs);
 
@@ -176,6 +179,72 @@ void ConfigParser::parseSensors(const json& j)
             config_.carControls.push_back(c);
         }
     }
+
+// ---------------- GPIO Sensors (红外、水浸、烟感) ----------------
+void ConfigParser::parseGPIOSensors(const json& j)
+{
+    if (!j.contains("gpio_sensor")) return;
+
+    for (auto& item : j["gpio_sensor"]) {
+        GPIOSensorConfig s;
+        s.id = item.value("id", "");
+        s.name = item.value("name", "");
+        s.type = item.value("type", "");
+        s.gpioPin = item.value("gpio_pin", 0);
+        s.description = item.value("description", "");
+
+        config_.gpioSensors.push_back(s);
+    }
+}
+
+// ---------------- 温湿度传感器 ----------------
+void ConfigParser::parseTempHumiditySensor(const json& j)
+{
+    if (!j.contains("temp_humidity_sensor")) return;
+
+    auto& ths = j["temp_humidity_sensor"];
+    
+    // 解析串口配置
+    if (ths.contains("serial_config")) {
+        auto& sc = ths["serial_config"];
+        config_.tempHumiditySensor.serial.port = sc.value("port", "");
+        config_.tempHumiditySensor.serial.baudRate = sc.value("baud_rate", 9600);
+        config_.tempHumiditySensor.serial.parity = sc.value("parity", "none");
+        config_.tempHumiditySensor.serial.stopBits = sc.value("stop_bits", 1);
+    }
+    
+    // 解析传感器列表
+    if (ths.contains("sensors")) {
+        for (auto& item : ths["sensors"]) {
+            TempHumiditySensorConfig s;
+            s.id = item.value("id", "");
+            s.name = item.value("name", "");
+            s.modbusAddr = item.value("modbus_addr", 1);
+            s.tempRegister = item.value("temp_register", 0);
+            s.humidityRegister = item.value("humidity_register", 1);
+            s.regCount = item.value("reg_count", 2);
+
+            config_.tempHumiditySensor.sensors.push_back(s);
+        }
+    }
+}
+
+// ---------------- 门锁配置 ----------------
+void ConfigParser::parseDoorLocks(const json& j)
+{
+    if (!j.contains("door_lock")) return;
+
+    for (auto& item : j["door_lock"]) {
+        DoorLockConfig d;
+        d.id = item.value("id", "");
+        d.name = item.value("name", "");
+        d.type = item.value("type", "");
+        d.gpioPin = item.value("gpio_pin", 0);
+        d.description = item.value("description", "");
+
+        config_.doorLocks.push_back(d);
+    }
+}
 
 // ---------------- Gateways ----------------
 void ConfigParser::parseGateways(const json& j)

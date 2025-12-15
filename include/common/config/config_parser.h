@@ -21,6 +21,9 @@ private:
     void parsePLCList(const nlohmann::json& j);
     void parsePLCDevices(const nlohmann::json& j);
     void parseSensors(const nlohmann::json& j);
+    void parseGPIOSensors(const nlohmann::json& j);
+    void parseTempHumiditySensor(const nlohmann::json& j);
+    void parseDoorLocks(const nlohmann::json& j);
     void parseCarControls(const nlohmann::json& j);
     void parseGateways(const nlohmann::json& j);
 
