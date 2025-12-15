@@ -42,7 +42,7 @@
       ],
       
       "temp_humidity_sensor": {
-        "description": "温湿度传感器配置，传感器数量可根据实际情况增减",
+        "description": "温湿度传感器配置，传感器数量根据实际情况增减",
         "serial_config": {
           "port": "/dev/ttyS3",
           "baud_rate": 9600,
