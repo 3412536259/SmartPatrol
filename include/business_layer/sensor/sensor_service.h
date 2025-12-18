@@ -13,7 +13,7 @@
 struct SensorStatusData {
     std::string sensor_id;
     std::string sensor_type;    // "infrared", "water_immersion", "smoke", "temperature_humidity"
-    bool is_online = false;     // 在线/离线状态
+    bool is_valid = false;     // 在线/离线状态
     bool triggered = false;     // GPIO传感器触发状态
     float temperature = 0.0f;   // 温湿度传感器温度
     float humidity = 0.0f;      // 温湿度传感器湿度

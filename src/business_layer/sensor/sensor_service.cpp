@@ -162,7 +162,7 @@ static bool readTempHumidityFromModbus(uint8_t slave_addr, uint16_t temp_reg,
         temperature = static_cast<int16_t>(values[0]) / 10.0f;
         humidity = values[1] / 10.0f;
         
-        Logger::getInstance().log(LogLevel::DEBUG, 
+        Logger::getInstance().log(LogLevel::INFO, 
             std::string("读取温湿度成功[从机") + std::to_string(slave_addr) + 
             "]: T=" + std::to_string(temperature) + 
             "°C, H=" + std::to_string(humidity) + "%");
@@ -317,7 +317,7 @@ void SensorService::monitoringLoop() {
                         checkAndTriggerAlarm(infrared_status_);
                     }
                 }
-                infrared_status_.is_online = true;  // GPIO传感器始终在线
+                infrared_status_.is_valid = true;  // GPIO传感器始终在线
             }
             
             // 读取水浸传感器
@@ -331,7 +331,7 @@ void SensorService::monitoringLoop() {
                         checkAndTriggerAlarm(water_status_);
                     }
                 }
-                water_status_.is_online = true;  // GPIO传感器始终在线
+                water_status_.is_valid = true;  // GPIO传感器始终在线
             }
             
             // 读取烟感传感器
@@ -345,7 +345,7 @@ void SensorService::monitoringLoop() {
                         checkAndTriggerAlarm(smoke_status_);
                     }
                 }
-                smoke_status_.is_online = true;  // GPIO传感器始终在线
+                smoke_status_.is_valid = true;  // GPIO传感器始终在线
             }
             
             // 读取所有温湿度传感器数据（通过Modbus）
@@ -358,7 +358,7 @@ void SensorService::monitoringLoop() {
                     float temp = 0.0f, hum = 0.0f;
                     bool success = readTempHumidityFromModbus(config.slave_addr, config.temp_register, temp, hum);
                     
-                    status.is_online = success;  // 通信成功则在线，否则离线
+                    status.is_valid = success;  // 通信成功则在线，否则离线
                     status.timestamp = current_time;
                     
                     if (success) {
