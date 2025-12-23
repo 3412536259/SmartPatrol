@@ -87,6 +87,28 @@ json WebController::handleHttp(const std::string& path, const json& payload)
         return resp;
     }
 
+    // 4) 传感器报警任务
+    if(path.find("/device/alarm") != std::string::npos){
+        std::string alarmType = payload.value("alarmType", "");
+        std::string sensorId = payload.value("sensorId", "");
+        std::string alarmReason = payload.value("reason", "");
+        
+        if(alarmType.empty() || sensorId.empty()) {
+            resp["success"] = false;
+            resp["error"] = "missing alarmType or sensorId";
+            return resp;
+        }
+        
+        // 可选的传感器数据
+        nlohmann::json sensorData = payload.value("sensorData", nlohmann::json::object());
+        
+        auto task = std::make_shared<SensorAlarmTask>(alarmType, sensorId, alarmReason, sensorData);
+        int id = scheduler_->submit(task, "http");
+        resp["success"] = true;
+        resp["task_id"] = id;
+        return resp;
+    }
+
     // -------------------------------
     // 5) 其它未知路径，统一接受但不执行任务
     // -------------------------------

@@ -99,6 +99,36 @@ void UpdateConfigTask::run(TaskContext& ctx){
     std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
+
+
+// =================== 传感器报警任务实现 ===================
+void SensorAlarmTask::run(TaskContext& ctx)
+{
+    // 获取当前时间戳
+    auto now = std::chrono::system_clock::now();
+    auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+        now.time_since_epoch()).count();
+    
+    // 构建报警消息JSON
+    nlohmann::json alarmMsg;
+    alarmMsg["alarmType"] = alarmType_;       // 报警类型
+    alarmMsg["sensorId"] = sensorId_;         // 传感器ID
+    alarmMsg["reason"] = alarmReason_;        // 报警原因
+    alarmMsg["timestamp"] = timestamp;        // 报警时间戳
+    alarmMsg["status"] = "ALARM";             // 状态：报警中
+    
+    // 添加传感器数据（如果有）
+    if (!sensorData_.empty()) {
+        alarmMsg["sensorData"] = sensorData_;
+    }
+    
+    // 发布报警消息到MQTT
+    ctx.publisher->publish(SENSOR_ALARM_TOPIC, alarmMsg.dump());
+    
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+}
+
+
 void DownloadVideoTask::run(TaskContext& ctx){
     {
         nlohmann::json ack;
