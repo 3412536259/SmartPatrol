@@ -14,4 +14,5 @@
 #define RESULT_UPDATE_CONFIG_TOPIC             BOX_ID + "/device/config/update/result"
 #define RESULT_GET_ALL_DEVICE_STATUS_TOPIC     BOX_ID + "/device/status/getall/result"
 #define RESULT_DOOR_LOCK_CONTROL_TOPIC         BOX_ID + "/device/doorLook/control/result"
+#define SENSOR_ALARM_TOPIC                     BOX_ID + "/device/sensor/alarm"
 #endif // DEVICE_TOPICS_H
