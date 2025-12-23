@@ -49,6 +49,7 @@ private:
     std::string JsonStr_;
 };
 
+<<<<<<< HEAD
 // 传感器报警任务（当传感器异常时上传数据和状态）
 class SensorAlarmTask : public ITask
 {
@@ -76,4 +77,18 @@ private:
     nlohmann::json sensorData_;  // 传感器数据（温度、湿度、触发状态等）
 };
 
+=======
+class DownloadVideoTask : public ITask
+{
+public:
+    DownloadVideoTask(std::string channel, std::string date, std::string time)
+        : channel_(channel), date_(date), time_(time) {}
+    std::string name() const override { return "DownloadVideoTask"; }
+    void run(TaskContext& ctx) override;
+private:
+    std::string channel_;
+    std::string date_;
+    std::string time_;
+};
+>>>>>>> d5d52bdc25cfc975d43bbf66a9f411bb2478e4e4
 #endif
