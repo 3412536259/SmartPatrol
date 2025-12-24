@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 #include <mutex>
+#include<json.hpp>
 
 // 传感器数据结构（用于状态上报）
 struct SensorStatusData {
@@ -34,6 +35,11 @@ struct TempHumiditySensorConfig {
     uint16_t humidity_register; // 湿度寄存器地址
 };
 
+// 报警回调类型定义（用于自动提交报警任务）
+// 参数: alarmType, sensorId, reason, sensorData
+using AlarmTaskCallback = std::function<void(const std::string&, const std::string&, 
+                                              const std::string&, const nlohmann::json&)>;
+
 // 传感器服务接口
 // 红外、水浸、烟感：后台监听，触发告警
 // 温湿度：主动读取数据
@@ -51,6 +57,9 @@ public:
     // 读取所有温湿度传感器（主动读取）
     virtual std::vector<SensorStatusData> readAllTemperatureHumidity() = 0;
     
+    // 设置报警任务回调（当传感器异常时自动提交报警任务）
+    virtual void setAlarmTaskCallback(AlarmTaskCallback callback) = 0;
+
     // 告警回调（红外、水浸、烟感触发时调用）
     virtual void setAlarmCallback(std::function<void(const std::string& alarm_type, 
                                                    const std::string& reason)> callback) = 0;
@@ -75,6 +84,9 @@ public:
     // 读取所有温湿度传感器（主动读取）
     std::vector<SensorStatusData> readAllTemperatureHumidity() override;
     
+    // 设置报警任务回调（当传感器异常时自动提交报警任务到调度器）
+    void setAlarmTaskCallback(AlarmTaskCallback callback) override;
+
     // 告警回调
     void setAlarmCallback(std::function<void(const std::string& alarm_type, 
                                            const std::string& reason)> callback) override;
@@ -91,6 +103,7 @@ private:
     std::thread monitoring_thread_;
     std::atomic<bool> running_{false};
     std::function<void(const std::string&, const std::string&)> alarm_callback_;
+    AlarmTaskCallback alarm_task_callback_;  // 用于自动提交报警任务
     
     mutable std::mutex status_mutex_;
     

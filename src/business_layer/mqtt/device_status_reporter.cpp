@@ -3,8 +3,9 @@
 #include <iostream>
 #include <json.hpp>
 DeviceStatusReporter::DeviceStatusReporter(IDeviceManager* devMgr,
-                                           ITaskResultPublisher* publisher)
-    : devMgr_(devMgr), publisher_(publisher) {}
+                                           ITaskResultPublisher* mqttPublisher,
+                                           ITaskResultPublisher* httpPublisher)
+    : devMgr_(devMgr), mqttPublisher_(mqttPublisher),httpPublisher_(httpPublisher) {}
 
 DeviceStatusReporter::~DeviceStatusReporter() {
     stopAutoReport();
@@ -65,5 +66,7 @@ void DeviceStatusReporter::reportStatus(const std::string& topic)
     }
     device["sensors"] = sensors;
 
-    publisher_->publish(topic, j.dump());
+    mqttPublisher_->publish(topic, j.dump());
+    httpPublisher_->publish(topic, j.dump());
+
 }

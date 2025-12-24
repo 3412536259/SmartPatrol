@@ -10,7 +10,8 @@
 class DeviceStatusReporter {
 public:
     DeviceStatusReporter(IDeviceManager* devMgr,
-                         ITaskResultPublisher* publisher);
+                         ITaskResultPublisher* mqttPublisher,
+                         ITaskResultPublisher* httpPublisher);
 
     ~DeviceStatusReporter();
 
@@ -24,8 +25,8 @@ private:
 
 private:
     IDeviceManager* devMgr_;
-    ITaskResultPublisher* publisher_;
-
+    ITaskResultPublisher* mqttPublisher_;
+    ITaskResultPublisher* httpPublisher_;
     std::string topic_;
     int intervalSec_ = 5;
     std::atomic_bool running_ = false;

@@ -1,5 +1,5 @@
 #include "sensor_service.h"
-#include "logger.h"
+#include "../../../include/common/logger/logger.h"
 #include <chrono>
 #include <fstream>
 #include <fcntl.h>
@@ -297,6 +297,11 @@ void SensorService::setAlarmCallback(
     Logger::getInstance().log(LogLevel::INFO, "已设置告警回调函数");
 }
 
+void SensorService::setAlarmTaskCallback(AlarmTaskCallback callback) {
+    alarm_task_callback_ = callback;
+    Logger::getInstance().log(LogLevel::INFO, "已设置报警任务回调函数（用于自动提交报警任务）");
+}
+
 void SensorService::monitoringLoop() {
     Logger::getInstance().log(LogLevel::INFO, "传感器监控循环已启动");
     
@@ -381,30 +386,57 @@ void SensorService::monitoringLoop() {
 }
 
 void SensorService::checkAndTriggerAlarm(const SensorStatusData& data) {
-    if (!alarm_callback_) return;
-    
     std::string alarm_type;
+    std::string sensor_type_code;  // 用于报警任务的类型代码
     std::string reason;
     
     if (data.sensor_type == "infrared" && data.triggered) {
         alarm_type = "入侵检测";
+        sensor_type_code = "infrared";
         reason = "红外传感器检测到运动: " + data.sensor_id;
     } else if (data.sensor_type == "water_immersion" && data.triggered) {
         alarm_type = "水浸告警";
+        sensor_type_code = "water_immersion";
         reason = "水浸传感器检测到漏水: " + data.sensor_id;
     } else if (data.sensor_type == "smoke" && data.triggered) {
         alarm_type = "烟雾告警";
+        sensor_type_code = "smoke";
         reason = "烟雾传感器检测到烟雾: " + data.sensor_id;
     }
     
     if (!alarm_type.empty()) {
-        try {
-            Logger::getInstance().log(LogLevel::WARNING, 
-                std::string("触发告警: ") + alarm_type + " - " + reason);
-            alarm_callback_(alarm_type, reason);
-        } catch (const std::exception& e) {
-            Logger::getInstance().log(LogLevel::ERROR, 
-                std::string("告警回调异常: ") + e.what());
+        Logger::getInstance().log(LogLevel::WARNING, 
+            std::string("触发告警: ") + alarm_type + " - " + reason);
+        
+        // 调用日志回调（如果设置）
+        if (alarm_callback_) {
+            try {
+                alarm_callback_(alarm_type, reason);
+            } catch (const std::exception& e) {
+                Logger::getInstance().log(LogLevel::ERROR, 
+                    std::string("告警回调异常: ") + e.what());
+            }
+        }
+        
+        // 自动提交报警任务到调度器（如果设置了回调）
+        if (alarm_task_callback_) {
+            try {
+                // 构建传感器数据JSON
+                nlohmann::json sensorData;
+                sensorData["sensor_type"] = data.sensor_type;
+                sensorData["triggered"] = data.triggered;
+                sensorData["timestamp"] = data.timestamp;
+                sensorData["is_valid"] = data.is_valid;
+                
+                // 调用回调，自动提交报警任务
+                alarm_task_callback_(sensor_type_code, data.sensor_id, reason, sensorData);
+                
+                Logger::getInstance().log(LogLevel::INFO, 
+                    std::string("已自动提交报警任务: ") + sensor_type_code + " - " + data.sensor_id);
+            } catch (const std::exception& e) {
+                Logger::getInstance().log(LogLevel::ERROR, 
+                    std::string("提交报警任务异常: ") + e.what());
+            }
         }
     }
 }

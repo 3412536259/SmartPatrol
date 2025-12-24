@@ -13,6 +13,7 @@
 #include <condition_variable>
 #include "iai_model_service.h"
 #include "idevice_manager.h"
+#include "itask_result_publisher.h"
 #include "device_info.h"
 extern "C" {
 #include <libswscale/swscale.h>
@@ -25,7 +26,7 @@ extern "C" {
 
 class AIRecognizer {
 public:
-    AIRecognizer(std::unique_ptr<IAIModelService> model,IDeviceManager* devMgr);
+    AIRecognizer(std::unique_ptr<IAIModelService> model,IDeviceManager* devMgr,ITaskResultPublisher* publisher);
     ~AIRecognizer();
 
     void run(RealImage data);
@@ -37,7 +38,7 @@ private:
     IDeviceManager* devMgr_;
     std::thread worker_;
     std::atomic<bool> running_{false};
-    
+    ITaskResultPublisher* publisher_;
     void processFrame(AVFrame* frame,const std::string& sourceCamera);
     void consumeLoop();
 

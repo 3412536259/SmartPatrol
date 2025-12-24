@@ -35,12 +35,12 @@ int main()
 
     //AI ---------------------------
     auto model = std::make_unique<AIModelService>(MODELPATH);
-    AIRecognizer ai(std::move(model),ideviceManager.get());
-    ai.start();    
+    AIRecognizer ai(std::move(model),ideviceManager.get(),&httpPublisher);
+    ai.start();       
     
     
     //定时上报设备状态启动
-    DeviceStatusReporter reporter(ideviceManager.get(),&mqttPublisher);
+    DeviceStatusReporter reporter(ideviceManager.get(),&mqttPublisher,&httpPublisher);
     reporter.startAutoReport(RESULT_GET_ALL_DEVICE_STATUS_TOPIC,15);
 
 
