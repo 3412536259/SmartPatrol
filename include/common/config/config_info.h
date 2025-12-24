@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "sensor_service.h"
+
 // ---------------- Camera ----------------
 struct CameraConfig {
     std::string id;
@@ -76,14 +76,14 @@ struct GPIOSensorConfig {
 };
 
 // ---------------- 温湿度传感器配置 ----------------
-// struct TempHumiditySensorConfig {
-//     std::string id;
-//     std::string name;
-//     int modbusAddr = 1;
-//     int tempRegister = 0;
-//     int humidityRegister = 1;
-//     int regCount = 2;
-// };
+struct TempHumiditySensorConfig {
+    std::string id;
+    std::string name;
+    int modbusAddr = 1;
+    int tempRegister = 0;
+    int humidityRegister = 1;
+    int regCount = 2;
+};
 
 struct TempHumiditySerialConfig {
     SerialConfig serial;

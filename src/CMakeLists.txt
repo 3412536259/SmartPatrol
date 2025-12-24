@@ -70,8 +70,6 @@ target_include_directories(main PUBLIC
     ${CMAKE_SOURCE_DIR}/include/common/base64
     ${CMAKE_SOURCE_DIR}/include/common/config
     ${CMAKE_SOURCE_DIR}/include/common/
-    ${CMAKE_SOURCE_DIR}/include/common/findvideourl
-
     ${CMAKE_SOURCE_DIR}/third_party/mqtt
     ${CMAKE_SOURCE_DIR}/third_party/json
     ${CMAKE_SOURCE_DIR}/include/presentation_layer

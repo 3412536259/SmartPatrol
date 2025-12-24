@@ -49,8 +49,6 @@ private:
     std::string JsonStr_;
 };
 
-
-
 // 传感器报警任务（当传感器异常时上传数据和状态）
 class SensorAlarmTask : public ITask
 {
@@ -77,7 +75,6 @@ private:
     std::string alarmReason_;    // 报警原因
     nlohmann::json sensorData_;  // 传感器数据（温度、湿度、触发状态等）
 };
-
 
 class DownloadVideoTask : public ITask
 {

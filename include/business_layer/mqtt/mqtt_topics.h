@@ -8,7 +8,7 @@
 #define GET_REAL_IMAGE_TOPIC                   BOX_ID + "/device/camera/getRealImage"
 #define UPDATE_CONFIG_TOPIC                    BOX_ID + "/device/config/update"
 #define GET_ALL_DEVICE_STATUS_TOPIC            BOX_ID + "/device/status/getall"
-#define DOOR_LOCK_CONTROL_TOPIC                BOX_ID + "/device/doorLook/control"
+#define DOOR_LOCK_CONTROL_TOPIC                BOX_ID + "/device/doorLock/control"
 #define DOWNLOAD_VIDEO                         BOX_ID + "device/video/download"
 
 #define RESULT_GET_REAL_IMAGE_TOPIC            BOX_ID + "/device/camera/getRealImage/result"

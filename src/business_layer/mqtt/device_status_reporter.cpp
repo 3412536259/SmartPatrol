@@ -46,27 +46,38 @@ void DeviceStatusReporter::reportStatus(const std::string& topic)
             {"onlineStatus", cs.online_status == CameraOnlineStatus::ONLINE ? "ONLINE" : "OFFLINE"}
         });
     }
+/*
+    // PLC
+    for (const auto& plc : status.plcStatus_.plcList) {
+        for (const auto& d : plc.deviceStatuses) {
+            device["plc_device"].push_back({
+                {"deviceId", d.id},
+                {"name",    d.name},
+                {"status",  d.status}
+            });
+        }
+    }
 
     // Sensors
-    nlohmann::json sensors = nlohmann::json::array();
-    for (const auto& sensor : status.sensorStatus.sensors) {
+    for (const auto& sensor : status.sensorStatus_.sensors) {
         nlohmann::json s;
-        s["sensorId"] = sensor.sensor_id;
-        s["type"] = sensor.sensor_type;
-        s["isValid"] = sensor.is_valid;
+        s["id"] = sensor.id;
+        s["type"] = sensor.type;
+        s["status"] = to_string(sensor.status);
 
-        if (sensor.sensor_type == "temperature_humidity") {
-            s["temperature"] = sensor.temperature;
-            s["humidity"] = sensor.humidity;
+        if (sensor.status == SensorStatus::NORMAL) {
+            if (sensor.type == "modbus") {
+                s["temperature"] = sensor.temperature;
+                s["humidity"] = sensor.humidity;
+            } else {
+                s["value"] = sensor.value;
+            }
         } else {
-            s["triggered"] = sensor.triggered;
+            s["code"] = "no data";
         }
 
-        sensors.push_back(s);
+        device["sensor"].push_back(s);
     }
-    device["sensors"] = sensors;
-
-    mqttPublisher_->publish(topic, j.dump());
-    httpPublisher_->publish(topic, j.dump());
-
+*/
+    publisher_->publish(topic, j.dump());
 }

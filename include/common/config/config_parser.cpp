@@ -217,10 +217,12 @@ void ConfigParser::parseTempHumiditySensor(const json& j)
     if (ths.contains("sensors")) {
         for (auto& item : ths["sensors"]) {
             TempHumiditySensorConfig s;
-            s.sensor_id = item.value("id", "");
-            s.slave_addr = static_cast<uint8_t>(item.value("modbus_addr", 1));
-            s.temp_register = static_cast<uint16_t>(item.value("temp_register", 0));
-            s.humidity_register = static_cast<uint16_t>(item.value("humidity_register", 1));
+            s.id = item.value("id", "");
+            s.name = item.value("name", "");
+            s.modbusAddr = item.value("modbus_addr", 1);
+            s.tempRegister = item.value("temp_register", 0);
+            s.humidityRegister = item.value("humidity_register", 1);
+            s.regCount = item.value("reg_count", 2);
 
             config_.tempHumiditySensor.sensors.push_back(s);
         }

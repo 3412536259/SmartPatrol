@@ -87,22 +87,20 @@ json WebController::handleHttp(const std::string& path, const json& payload)
         return resp;
     }
 
-    // 4) 传感器报警任务
-    if(path.find("/device/alarm") != std::string::npos){
-        std::string alarmType = payload.value("alarmType", "");
-        std::string sensorId = payload.value("sensorId", "");
-        std::string alarmReason = payload.value("reason", "");
+    // -------------------------------
+    // 4) 门锁控制接口（开锁）
+    // -------------------------------
+    if(path.find("/device/doorlock") != std::string::npos || 
+       path.find("/device/door") != std::string::npos){
+        std::string lockId = payload.value("lockId", payload.value("deviceId", ""));
         
-        if(alarmType.empty() || sensorId.empty()) {
+        if(lockId.empty()) {
             resp["success"] = false;
-            resp["error"] = "missing alarmType or sensorId";
+            resp["error"] = "missing lockId";
             return resp;
         }
         
-        // 可选的传感器数据
-        nlohmann::json sensorData = payload.value("sensorData", nlohmann::json::object());
-        
-        auto task = std::make_shared<SensorAlarmTask>(alarmType, sensorId, alarmReason, sensorData);
+        auto task = std::make_shared<OpenDoorLockTask>(lockId);
         int id = scheduler_->submit(task, "http");
         resp["success"] = true;
         resp["task_id"] = id;
@@ -110,7 +108,7 @@ json WebController::handleHttp(const std::string& path, const json& payload)
     }
 
     // -------------------------------
-    // 5) 其它未知路径，统一接受但不执行任务
+    // 其它未知路径，统一接受但不执行任务
     // -------------------------------
     resp["success"] = true;
     resp["note"] = "accepted";

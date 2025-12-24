@@ -8,7 +8,7 @@
 #include <vector>
 #include <string>
 #include <mutex>
-#include<json.hpp>
+#include "json.hpp"
 
 // 传感器数据结构（用于状态上报）
 struct SensorStatusData {
@@ -59,8 +59,8 @@ public:
     
     // 设置报警任务回调（当传感器异常时自动提交报警任务）
     virtual void setAlarmTaskCallback(AlarmTaskCallback callback) = 0;
-
-    // 告警回调（红外、水浸、烟感触发时调用）
+    
+    // 告警回调（红外、水浸、烟感触发时调用）- 保留用于日志等
     virtual void setAlarmCallback(std::function<void(const std::string& alarm_type, 
                                                    const std::string& reason)> callback) = 0;
 };
@@ -86,8 +86,8 @@ public:
     
     // 设置报警任务回调（当传感器异常时自动提交报警任务到调度器）
     void setAlarmTaskCallback(AlarmTaskCallback callback) override;
-
-    // 告警回调
+    
+    // 告警回调（保留用于日志等）
     void setAlarmCallback(std::function<void(const std::string& alarm_type, 
                                            const std::string& reason)> callback) override;
     

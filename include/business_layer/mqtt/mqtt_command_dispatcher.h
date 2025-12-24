@@ -17,9 +17,10 @@ private:
     JobScheduler& scheduler_;
     std::string boxId_;
     void handleGetRealImage(const nlohmann::json& j);
+    void handleUpdateConfig(const nlohmann::json& j);
+    void handleGetSensorData(const nlohmann::json& j);
     void handleGetAllDeviceStatus(const nlohmann::json& j);
     void handleConfigUpdate(const nlohmann::json& j);
-    void handleOpenDoorLock(const nlohmann::json& j);
 };
 
 

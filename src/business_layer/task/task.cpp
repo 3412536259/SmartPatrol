@@ -99,8 +99,6 @@ void UpdateConfigTask::run(TaskContext& ctx){
     std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
-
-
 // =================== 传感器报警任务实现 ===================
 void SensorAlarmTask::run(TaskContext& ctx)
 {
@@ -127,7 +125,6 @@ void SensorAlarmTask::run(TaskContext& ctx)
     
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
-
 
 void DownloadVideoTask::run(TaskContext& ctx){
     {
