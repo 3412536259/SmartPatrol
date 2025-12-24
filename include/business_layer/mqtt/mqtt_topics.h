@@ -8,17 +8,15 @@
 #define GET_REAL_IMAGE_TOPIC                   BOX_ID + "/device/camera/getRealImage"
 #define UPDATE_CONFIG_TOPIC                    BOX_ID + "/device/config/update"
 #define GET_ALL_DEVICE_STATUS_TOPIC            BOX_ID + "/device/status/getall"
-#define DOOR_LOCK_CONTROL_TOPIC                BOX_ID + "/device/doorLook/control"
+#define DOOR_LOCK_CONTROL_TOPIC                BOX_ID + "/device/doorLock/control"
 #define DOWNLOAD_VIDEO                         BOX_ID + "device/video/download"
 
 #define RESULT_GET_REAL_IMAGE_TOPIC            BOX_ID + "/device/camera/getRealImage/result"
 #define RESULT_UPDATE_CONFIG_TOPIC             BOX_ID + "/device/config/update/result"
 #define RESULT_GET_ALL_DEVICE_STATUS_TOPIC     BOX_ID + "/device/status/getall/result"
 #define RESULT_DOOR_LOCK_CONTROL_TOPIC         BOX_ID + "/device/doorLook/control/result"
-<<<<<<< HEAD
-#define SENSOR_ALARM_TOPIC                     BOX_ID + "/device/sensor/alarm"
-=======
-#define RESULT_DOWNLOAD_VIDEO                  BOX_ID + "device/video/download/result"
+#define RESULT_DOWNLOAD_VIDEO                  BOX_ID + "/device/video/download/result"
+#define RESULT_AI_ALARM_TOPIC                  BOX_ID + "/device/camera/aiAlarm/result"
 
->>>>>>> d5d52bdc25cfc975d43bbf66a9f411bb2478e4e4
+#define SENSOR_ALARM_TOPIC                     BOX_ID + "/device/sensor/alarm"
 #endif // DEVICE_TOPICS_H
