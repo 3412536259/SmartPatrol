@@ -99,7 +99,6 @@ void UpdateConfigTask::run(TaskContext& ctx){
     std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
-<<<<<<< HEAD
 // =================== 传感器报警任务实现 ===================
 void SensorAlarmTask::run(TaskContext& ctx)
 {
@@ -125,7 +124,8 @@ void SensorAlarmTask::run(TaskContext& ctx)
     ctx.publisher->publish(SENSOR_ALARM_TOPIC, alarmMsg.dump());
     
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-=======
+}
+
 void DownloadVideoTask::run(TaskContext& ctx){
     {
         nlohmann::json ack;
@@ -144,5 +144,4 @@ void DownloadVideoTask::run(TaskContext& ctx){
     j["videoPath"] = videoPath;
     ctx.publisher->publish(RESULT_DOWNLOAD_VIDEO, j.dump());
     std::this_thread::sleep_for(std::chrono::seconds(1));
->>>>>>> d5d52bdc25cfc975d43bbf66a9f411bb2478e4e4
 }

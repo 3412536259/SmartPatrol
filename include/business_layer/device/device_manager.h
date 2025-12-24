@@ -33,8 +33,11 @@ public:
     // 读取所有温湿度传感器数据
     std::vector<SensorStatusData> getAllTemperatureHumidity() override;
     
-    // 设置告警回调（监听传感器状态：红外、水浸、烟感触发时回调）
+    // 设置告警回调（监听传感器状态：红外、水浸、烟感触发时回调）- 用于日志
     void setAlarmCallback(std::function<void(const std::string&, const std::string&)> callback);
+    
+    // 设置报警任务回调（当传感器异常时自动提交报警任务到调度器）
+    void setAlarmTaskCallback(AlarmTaskCallback callback);
     
     // 获取所有传感器状态（供内部定时上报使用）
     AllSensorStatus getAllSensorStatus();
